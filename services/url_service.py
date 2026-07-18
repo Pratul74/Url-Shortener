@@ -19,7 +19,7 @@ class UrlShortenerService:
             if not self.short_code_exists(short_code):
                 return short_code
             
-    def create_short_url(self, orginal_url, custom_alias=None, expires_at=None):
+    def create_short_url(self, original_url, custom_alias=None, expires_at=None):
         if custom_alias:
             if self.short_code_exists(custom_alias):
                 raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail='Alias already exists.')
@@ -27,7 +27,9 @@ class UrlShortenerService:
 
         else:
             short_code=self.generate_short_code()
-        url = Url(orginal_url=orginal_url, short_code=short_code, expires_at=expires_at)
+        url = Url(original_url=original_url, short_code=short_code, expires_at=expires_at)
         self.db.add(url)
         self.db.commit()
         self.db.refresh(url)
+
+        return url
