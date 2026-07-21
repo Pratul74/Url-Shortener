@@ -1,15 +1,16 @@
 from db.dependencies import db_dependency
 from services.url_service import UrlShortenerService
 from fastapi import APIRouter, status
+from fastapi.responses import RedirectResponse
 from core.config import settings
 from schemas.url import UrlCreate, UrlResponse
 
 router = APIRouter(
-    prefix='/api/v1',
+    prefix='/urls',
     tags=["Url Shortener"]
 )
 
-@router.post('shorten/', response_model=UrlResponse, status_code=status.HTTP_201_CREATED)
+@router.post('', response_model=UrlResponse, status_code=status.HTTP_201_CREATED)
 def shorten_url(db: db_dependency, request: UrlCreate):
     url_service = UrlShortenerService(db)
 
@@ -24,3 +25,13 @@ def shorten_url(db: db_dependency, request: UrlCreate):
                        created_at=url.created_at,
                        expires_at=url.expires_at
                        )
+
+@router.get('/{short_code}')
+def get_original_url(short_code:str, db: db_dependency):
+    service = UrlShortenerService(db)
+
+    url = service.get_original_url(short_code)
+
+    return RedirectResponse(url=url.original_url, status_code=status.HTTP_307_TEMPORARY_REDIRECT)
+
+
