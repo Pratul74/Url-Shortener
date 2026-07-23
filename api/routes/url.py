@@ -26,6 +26,11 @@ def shorten_url(db: db_dependency, request: UrlCreate):
                        expires_at=url.expires_at
                        )
 
+@router.get('/get_all', response_model=list[UrlInfo])
+def get_all_url(db:db_dependency):
+    service=UrlShortenerService(db)
+    return service.list_url()
+
 @router.get('/{short_code}')
 def get_original_url(short_code:str, db: db_dependency):
     service = UrlShortenerService(db)
@@ -45,10 +50,5 @@ def delete_url(db:db_dependency, short_code:str):
     service = UrlShortenerService(db)
 
     service.delete_url(short_code)
-
-@router.get('/get_all')
-def get_all_url(db:db_dependency):
-    service=UrlShortenerService(db)
-    return service.list_url()
 
 
