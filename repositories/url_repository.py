@@ -9,6 +9,9 @@ class URLRepository(BaseRepository[Url]):
     def __init__(self, db: Session):
         super().__init__(Url, db)
 
+    def get_all(self):
+        return self.db.query(Url).all()
+
     def get_by_short_code(self, short_code: str):
         return (
             self.db.query(Url)

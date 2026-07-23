@@ -9,7 +9,7 @@ class UrlCreate(BaseModel):
         default=None
     )
 
-    expires_at:datetime|None = None
+    expires_at:datetime | None = None
 
 class UrlResponse(BaseModel):
     model_config=ConfigDict(from_attributes=True)
@@ -19,14 +19,15 @@ class UrlResponse(BaseModel):
     short_url:str
     clicks:int
     created_at:datetime
-    expires_at:datetime|None
+    expires_at:datetime | None
 
 
 class UrlInfo(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     original_url:HttpUrl
     short_code:str
+    short_url:str
     clicks:int
     is_active:bool
     created_at:datetime
-    expires_at:datetime|None
+    expires_at:datetime | None

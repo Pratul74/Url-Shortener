@@ -3,7 +3,7 @@ from services.url_service import UrlShortenerService
 from fastapi import APIRouter, status
 from fastapi.responses import RedirectResponse
 from core.config import settings
-from schemas.url import UrlCreate, UrlResponse
+from schemas.url import UrlCreate, UrlResponse, UrlInfo
 
 router = APIRouter(
     prefix='/urls',
@@ -33,5 +33,22 @@ def get_original_url(short_code:str, db: db_dependency):
     url = service.get_original_url(short_code)
 
     return RedirectResponse(url=url.original_url, status_code=status.HTTP_307_TEMPORARY_REDIRECT)
+
+@router.get('/detail/{short_code}', response_model=UrlInfo)
+def get_url_detail(short_code:str, db:db_dependency):
+    service = UrlShortenerService(db)
+
+    return service.url_details(short_code)
+
+@router.delete('/delete/{short_code}')
+def delete_url(db:db_dependency, short_code:str):
+    service = UrlShortenerService(db)
+
+    service.delete_url(short_code)
+
+@router.get('/get_all')
+def get_all_url(db:db_dependency):
+    service=UrlShortenerService(db)
+    return service.list_url()
 
 
