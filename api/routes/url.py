@@ -17,7 +17,7 @@ def shorten_url(db: db_dependency, request: UrlCreate):
 
     url = url_service.create_short_url(original_url=str(request.original_url), custom_alias=request.custom_alias, expires_at=request.expires_at)
 
-    return UrlMapper.to_response(url)
+    return UrlMapper.to_response(url, settings.BASE_URL)
 
 @router.get('/get_all', response_model=list[UrlInfo])
 def get_all_url(db:db_dependency):
