@@ -2,7 +2,6 @@ from fastapi import HTTPException, status
 from datetime import datetime, timezone
 from core import settings
 from mappers import UrlMapper
-from schemas.url import UrlInfo
 from utils.generator import generate_code
 from repositories.url_repository import URLRepository
 
@@ -59,7 +58,7 @@ class UrlShortenerService:
         if url.expires_at and url.expires_at < datetime.now(timezone.now):
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Url has expired.")
         
-        return UrlMapper.to_details(url)
+        return UrlMapper.to_details(url, settings.BASE_URL)
     def delete_url(self, short_code):
         url = self.repo.get_by_short_code(short_code)
 
@@ -71,16 +70,4 @@ class UrlShortenerService:
     def list_url(self):
         urls = self.repo.get_all()
 
-        return [
-            UrlInfo(
-                id=str(url.id),
-                original_url=url.original_url,
-                short_code=url.short_code,
-                short_url=f"{settings.BASE_URL}/{url.short_code}",
-                clicks=url.clicks,
-                is_active=url.is_active,
-                created_at=url.created_at,
-                expires_at=url.expires_at,
-            )
-            for url in urls
-        ]
+        return [UrlMapper.to_details(url, settings.BASE_URL) for url in urls]
