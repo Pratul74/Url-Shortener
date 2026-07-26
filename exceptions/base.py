@@ -1,0 +1,5 @@
+class AppException(Exception):
+    """Base Exception for all domain exceptions."""
+    def __int__(self, message:str):
+        self.message=message
+        super().__init__(message)
