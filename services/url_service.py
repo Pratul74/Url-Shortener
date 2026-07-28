@@ -1,7 +1,7 @@
 from fastapi import HTTPException, status
 from datetime import datetime, timezone
 from core import settings
-from base import BaseService
+from .base import BaseService
 from mappers import UrlMapper
 from utils.generator import generate_code
 from repositories.url_repository import URLRepository
