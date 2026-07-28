@@ -10,4 +10,23 @@ def register_exception_handlers(app: FastAPI):
             content={'detail':exec.message}
         )
 
-    async def url_expired_handler(request:Request, exec:u)
+    @app.exception_handler(UrlExpiredException)
+    async def url_expired_handler(request:Request, exec:UrlExpiredException):
+        return JSONResponse(
+            status_code=410,
+            content={'detail':exec.message}
+        )
+
+    @app.exception_handler(UrlInactiveException)
+    async def url_inactive_handler(request:Request, exec:UrlInactiveException):
+        return JSONResponse(
+            status_code=404,
+            content={'detail':exec.message}
+        )
+
+    @app.exception_handler(AliasAlreadyExistsException)
+    async def alias_already_exists_handler(request:Request, exec:AliasAlreadyExistsException):
+        return JSONResponse(
+            status_code=409,
+            content={'detail':exec.message}
+        )
