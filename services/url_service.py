@@ -1,4 +1,5 @@
-from fastapi import HTTPException, status
+# from fastapi import HTTPException, status
+from exceptions import AliasAlreadyExistsException, UrlNotFoundException, UrlInactiveException, UrlExpiredException
 from datetime import datetime, timezone
 from core import settings
 from .base import BaseService
@@ -22,9 +23,8 @@ class UrlShortenerService(BaseService):
     def create_short_url(self, original_url, custom_alias=None, expires_at=None):
         if custom_alias:
             if self.repo.short_code_exists(custom_alias):
-                raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail='Alias already exists.')
+                raise AliasAlreadyExistsException()
             short_code=custom_alias
-
         else:
             short_code=self.generate_short_code()
         return self.repo.create(
@@ -37,13 +37,13 @@ class UrlShortenerService(BaseService):
         url = self.repo.get_by_short_code(short_code)
 
         if not url:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Url not found.")
+            raise UrlNotFoundException()
         
         if not url.is_active:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Url is not active.")
+            raise UrlInactiveException()
         
         if url.expires_at and url.expires_at<datetime.now(timezone.utc):
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Url has expired.")
+            raise UrlExpiredException()
         
         self.repo.increment_clicks(url)
 
@@ -52,20 +52,20 @@ class UrlShortenerService(BaseService):
     def url_details(self, short_code):
         url = self.repo.get_by_short_code(short_code)
         if not url:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Url not found.")
+            raise UrlNotFoundException()
         
         if not url.is_active:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Url is not active.")
+            raise UrlInactiveException()
         
         if url.expires_at and url.expires_at < datetime.now(timezone.now):
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Url has expired.")
+            raise UrlExpiredException()
         
         return UrlMapper.to_details(url, settings.BASE_URL)
     def delete_url(self, short_code):
         url = self.repo.get_by_short_code(short_code)
 
         if not url:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Url not found.")
+            raise UrlNotFoundException()
         
         self.repo.deactivate(url)
 
