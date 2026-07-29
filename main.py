@@ -1,7 +1,10 @@
 from fastapi import FastAPI
 from api import api_router
+from core import register_exception_handlers
 
 app = FastAPI(title="Url Shortener API")
+
+register_exception_handlers(app)
 
 app.include_router(api_router)
 
