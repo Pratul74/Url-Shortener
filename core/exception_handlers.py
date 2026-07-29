@@ -4,29 +4,29 @@ from fastapi.responses import JSONResponse
 
 def register_exception_handlers(app: FastAPI):
     @app.exception_handler(UrlNotFoundException)
-    async def url_not_found_handler(request:Request, exec:UrlNotFoundException):
+    async def url_not_found_handler(request:Request, exc:UrlNotFoundException):
         return JSONResponse(
             status_code=404,
-            content={'detail':exec.message}
+            content={'detail':str(exc)}
         )
 
     @app.exception_handler(UrlExpiredException)
-    async def url_expired_handler(request:Request, exec:UrlExpiredException):
+    async def url_expired_handler(request:Request, exc:UrlExpiredException):
         return JSONResponse(
             status_code=410,
-            content={'detail':exec.message}
+            content={'detail':str(exc)}
         )
 
     @app.exception_handler(UrlInactiveException)
-    async def url_inactive_handler(request:Request, exec:UrlInactiveException):
+    async def url_inactive_handler(request:Request, exc:UrlInactiveException):
         return JSONResponse(
             status_code=404,
-            content={'detail':exec.message}
+            content={'detail':str(exc)}
         )
 
     @app.exception_handler(AliasAlreadyExistsException)
-    async def alias_already_exists_handler(request:Request, exec:AliasAlreadyExistsException):
+    async def alias_already_exists_handler(request:Request, exc:AliasAlreadyExistsException):
         return JSONResponse(
             status_code=409,
-            content={'detail':exec.message}
+            content={'detail':str(exc)}
         )
