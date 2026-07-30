@@ -1,4 +1,3 @@
-# from fastapi import HTTPException, status
 from exceptions import AliasAlreadyExistsException, UrlNotFoundException, UrlInactiveException, UrlExpiredException
 from datetime import datetime, timezone
 from core import settings
