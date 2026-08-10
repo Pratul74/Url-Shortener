@@ -1,7 +1,10 @@
 from .base import AppException
 
 class UserAlreadyExistsException(AppException):
-    super().__init__("User already exists.")
+    def __init__(self):
+        super().__init__("User already exists.")
+    
 
 class InvalidCredentialsException(AppException):
-    super().__init__("Invalid email or password")
+    def __init__(self):
+        super().__init__("Invalid email or password")
