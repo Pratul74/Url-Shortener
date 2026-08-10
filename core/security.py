@@ -46,3 +46,10 @@ def create_access_token(
         SECRET_KEY,
         algorithm=ALGORITHM,
     )
+
+def decode_access_token(token: str) -> dict:
+    return jwt.decode(
+        token=token,
+        key=settings.SECRET_KEY,
+        algorithms=[settings.JWT_ALGORITHM],
+    )
