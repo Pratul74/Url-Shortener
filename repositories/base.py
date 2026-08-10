@@ -20,8 +20,6 @@ class BaseRepository(Generic[ModelType]):
         obj = self.model(**kwargs)
 
         self.db.add(obj)
-        self.db.commit()
-        self.db.refresh(obj)
 
         return obj
 
