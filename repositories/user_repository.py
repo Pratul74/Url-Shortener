@@ -20,4 +20,4 @@ class UserRepository(BaseRepository[User]):
         return self.db.query(User).filter(User.email == email).first() is not None
 
     def exists_by_username(self, username:str) -> bool:
-        return self.db.query(User).filter(User.username == username).first() is None
+        return self.db.query(User).filter(User.username == username).first() is not None
