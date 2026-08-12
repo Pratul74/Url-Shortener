@@ -2,7 +2,7 @@ from .base import BaseService
 from sqlalchemy.orm import Session
 from mappers import UserMapper
 from schemas import UserCreate, UserResponse, TokenResponse
-from core import hash_password, create_access_token, verify_password
+from core.security import hash_password, create_access_token, verify_password
 from exceptions import UserAlreadyExistsException, InvalidCredentialsException
 from repositories import UserRepository
 
