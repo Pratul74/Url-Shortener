@@ -19,7 +19,7 @@ class UrlShortenerService(BaseService):
             if not self.repo.short_code_exists(short_code):
                 return short_code
             
-    def create_short_url(self, original_url, custom_alias=None, expires_at=None):
+    def create_short_url(self, original_url, custom_alias=None, expires_at=None, user_id=None):
         if custom_alias:
             if self.repo.short_code_exists(custom_alias):
                 raise AliasAlreadyExistsException()
@@ -29,7 +29,8 @@ class UrlShortenerService(BaseService):
         return self.repo.create(
             original_url=original_url, 
             custom_alias=short_code, 
-            expires_at=expires_at
+            expires_at=expires_at,
+            user_id=user_id
             )
     
     def get_original_url(self, short_code:str):
