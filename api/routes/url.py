@@ -7,14 +7,13 @@ from mappers import UrlMapper
 from fastapi.responses import RedirectResponse
 from core.config import settings
 from schemas.url import UrlCreate, UrlResponse, UrlInfo
-from dependencies import get_current_user
+from dependencies import CurrentUser
 
 router = APIRouter(
     prefix='/urls',
     tags=["Url Shortener"]
 )
 
-CurrentUser=Annotated[User, Depends(get_current_user),]
 
 @router.post('', response_model=UrlResponse, status_code=status.HTTP_201_CREATED)
 def shorten_url(db: db_dependency, request: UrlCreate, current_user: CurrentUser):
