@@ -1,21 +1,26 @@
 from db.dependencies import db_dependency
 from services.url_service import UrlShortenerService
-from fastapi import APIRouter, status
+from fastapi import APIRouter, status, Depends
+from models import User
+from typing import Annotated
 from mappers import UrlMapper
 from fastapi.responses import RedirectResponse
 from core.config import settings
 from schemas.url import UrlCreate, UrlResponse, UrlInfo
+from dependencies import get_current_user
 
 router = APIRouter(
     prefix='/urls',
     tags=["Url Shortener"]
 )
 
+CurrentUser=Annotated[User, Depends(get_current_user),]
+
 @router.post('', response_model=UrlResponse, status_code=status.HTTP_201_CREATED)
-def shorten_url(db: db_dependency, request: UrlCreate):
+def shorten_url(db: db_dependency, request: UrlCreate, current_user: CurrentUser):
     url_service = UrlShortenerService(db)
 
-    url = url_service.create_short_url(original_url=str(request.original_url), custom_alias=request.custom_alias, expires_at=request.expires_at)
+    url = url_service.create_short_url(original_url=str(request.original_url), custom_alias=request.custom_alias, expires_at=request.expires_at, user_id=current_user.id)
 
     return UrlMapper.to_response(url, settings.BASE_URL)
 
