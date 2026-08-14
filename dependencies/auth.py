@@ -1,5 +1,7 @@
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError
+from typing import Annotated
+from models import User
 from exceptions import InvalidCredentialsException
 from repositories import UserRepository
 from fastapi import Depends
@@ -7,6 +9,8 @@ from sqlalchemy.orm import Session
 from db.session import get_db
 from core.security import decode_access_token
 
+
+CurrentUser=Annotated[User, Depends[get_current_user]]
 
 oauth2_scheme=OAuth2PasswordBearer(tokenUrl='/auth/login')
 
