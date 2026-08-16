@@ -12,16 +12,16 @@ class UrlShortenerService(BaseService):
         super().__init__(db)
         self.repo=URLRepository(db)
         
-    def generate_short_code(self):
+    def generate_short_code(self, user_id):
         while True:
             short_code = generate_code()
 
-            if not self.repo.short_code_exists(short_code):
+            if not self.repo.short_code_exists(user_id, short_code):
                 return short_code
             
     def create_short_url(self, original_url, custom_alias=None, expires_at=None, user_id=None):
         if custom_alias:
-            if self.repo.short_code_exists(custom_alias):
+            if self.repo.short_code_exists(user_id, custom_alias):
                 raise AliasAlreadyExistsException()
             short_code=custom_alias
         else:
@@ -33,8 +33,8 @@ class UrlShortenerService(BaseService):
             user_id=user_id
             )
     
-    def get_original_url(self, short_code:str):
-        url = self.repo.get_by_short_code(short_code)
+    def get_original_url(self, user_id, short_code:str):
+        url = self.repo.get_by_short_code(user_id, short_code)
 
         if not url:
             raise UrlNotFoundException()
@@ -49,8 +49,8 @@ class UrlShortenerService(BaseService):
 
         return url
     
-    def url_details(self, short_code):
-        url = self.repo.get_by_short_code(short_code)
+    def url_details(self, user_id, short_code):
+        url = self.repo.get_by_short_code(user_id, short_code)
         if not url:
             raise UrlNotFoundException()
         
@@ -61,15 +61,15 @@ class UrlShortenerService(BaseService):
             raise UrlExpiredException()
         
         return UrlMapper.to_details(url, settings.BASE_URL)
-    def delete_url(self, short_code):
-        url = self.repo.get_by_short_code(short_code)
+    def delete_url(self, user_id, short_code):
+        url = self.repo.get_by_short_code(user_id, short_code)
 
         if not url:
             raise UrlNotFoundException()
         
         self.repo.deactivate(url)
 
-    def list_url(self):
-        urls = self.repo.get_all()
+    def list_url_by_user(self, user_id):
+        urls = self.repo.get_all_by_user(user_id)
 
         return [UrlMapper.to_details(url, settings.BASE_URL) for url in urls]
