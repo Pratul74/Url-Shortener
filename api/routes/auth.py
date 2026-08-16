@@ -1,4 +1,6 @@
-from fastapi import APIRouter, status
+from fastapi import APIRouter, status, Depends
+from fastapi.security import OAuth2PasswordRequestForm
+from typing import Annotated
 from schemas import UserCreate, UserResponse, TokenResponse, LoginRequest
 from db.dependencies import db_dependency
 from services import AuthService
@@ -15,7 +17,8 @@ def register(db: db_dependency, request: UserCreate):
     return service.register(request)
 
 @router.post('/login', response_model=TokenResponse, status_code=status.HTTP_200_OK)
-def login(db:db_dependency, request: LoginRequest):
+def login(db:db_dependency, form_data:Annotated[OAuth2PasswordRequestForm, Depends()]):
     service = AuthService(db)
 
-    return service.login(request.email, request.password)
+    return service.login(form_data.username,
+                         form_data.password)
