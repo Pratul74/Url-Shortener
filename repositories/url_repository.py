@@ -20,9 +20,10 @@ class URLRepository(BaseRepository[Url]):
             .first()
         )
 
-    def get_by_original_url(self, original_url: str):
+    def get_by_original_url(self, user_id, original_url: str):
         return (
             self.db.query(Url)
+            .filter(Url.user_id==user_id)
             .filter(Url.original_url == original_url)
             .first()
         )
