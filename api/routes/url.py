@@ -24,9 +24,9 @@ def shorten_url(db: db_dependency, request: UrlCreate, current_user: CurrentUser
     return UrlMapper.to_response(url, settings.BASE_URL)
 
 @router.get('/get_all', response_model=list[UrlInfo])
-def get_all_url(db:db_dependency):
+def get_all_url_by_user(db:db_dependency, current_user:CurrentUser):
     service=UrlShortenerService(db)
-    return service.list_url()
+    return service.list_url_by_user(current_user.id)
 
 @router.get('/{short_code}')
 def get_original_url(short_code:str, db: db_dependency):
@@ -37,7 +37,7 @@ def get_original_url(short_code:str, db: db_dependency):
     return RedirectResponse(url=url.original_url, status_code=status.HTTP_307_TEMPORARY_REDIRECT)
 
 @router.get('/detail/{short_code}', response_model=UrlInfo)
-def get_url_detail(short_code:str, db:db_dependency):
+def get_url_detail(short_code:str, db:db_dependency, current_user:CurrentUser):
     service = UrlShortenerService(db)
 
     return service.url_details(short_code)
