@@ -12,9 +12,10 @@ class URLRepository(BaseRepository[Url]):
     def get_all_by_user(self, user_id):
         return self.db.query(Url).filter(Url.user_id == user_id).all()
 
-    def get_by_short_code(self, short_code: str):
+    def get_by_short_code(self, user_id, short_code: str):
         return (
             self.db.query(Url)
+            .filter(Url.user_id == user_id)
             .filter(Url.short_code == short_code)
             .first()
         )
@@ -26,8 +27,8 @@ class URLRepository(BaseRepository[Url]):
             .first()
         )
 
-    def short_code_exists(self, short_code: str) -> bool:
-        return self.get_by_short_code(short_code) is not None
+    def short_code_exists(self, user_id, short_code: str) -> bool:
+        return self.get_by_short_code(user_id, short_code) is not None
 
     def increment_clicks(self, url: Url):
 
@@ -39,7 +40,9 @@ class URLRepository(BaseRepository[Url]):
 
         return url
 
-    def deactivate(self, url: Url):
+    def deactivate(self, user_id:int, url: Url):
+        if url.user_id != user_id:
+            raise PermissionError({"message": "You donot own this url"})
 
         url.is_active = False
 
