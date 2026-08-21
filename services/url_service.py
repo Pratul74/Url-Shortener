@@ -59,7 +59,7 @@ class UrlShortenerService(BaseService):
         if not url.is_active:
             raise UrlInactiveException()
         
-        if url.expires_at and url.expires_at < datetime.now(timezone.now):
+        if url.expires_at and url.expires_at < datetime.now(timezone.utc):
             raise UrlExpiredException()
         
         return UrlMapper.to_details(url, settings.BASE_URL)
