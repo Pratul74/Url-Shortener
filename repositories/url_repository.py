@@ -12,24 +12,23 @@ class URLRepository(BaseRepository[Url]):
     def get_all_by_user(self, user_id):
         return self.db.query(Url).filter(Url.user_id == user_id).all()
 
-    def get_by_short_code(self, user_id, short_code: str):
+    def get_by_short_code(self, short_code: str):
         return (
             self.db.query(Url)
-            .filter(Url.user_id == user_id)
             .filter(Url.short_code == short_code)
             .first()
         )
 
-    def get_by_original_url(self, user_id, original_url: str):
+    def get_by_original_url(self, original_url: str, user_id:int):
         return (
             self.db.query(Url)
-            .filter(Url.user_id==user_id)
+            .filter(Url.user_id == user_id)
             .filter(Url.original_url == original_url)
             .first()
         )
 
-    def short_code_exists(self, user_id, short_code: str) -> bool:
-        return self.get_by_short_code(user_id, short_code) is not None
+    def short_code_exists(self, short_code: str) -> bool:
+        return self.get_by_short_code(short_code) is not None
 
     def increment_clicks(self, url: Url):
 
