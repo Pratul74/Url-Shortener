@@ -40,12 +40,12 @@ def get_original_url(short_code:str, db: db_dependency):
 def get_url_detail(short_code:str, db:db_dependency, current_user:CurrentUser):
     service = UrlShortenerService(db)
 
-    return service.url_details(short_code)
+    return service.url_details(current_user.id, short_code)
 
 @router.delete('/delete/{short_code}')
-def delete_url(db:db_dependency, short_code:str):
+def delete_url(db:db_dependency, short_code:str, current_user:CurrentUser):
     service = UrlShortenerService(db)
 
-    service.delete_url(short_code)
+    service.delete_url(current_user.id, short_code)
 
 
