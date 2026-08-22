@@ -24,6 +24,7 @@ class UrlResponse(BaseModel):
 
 class UrlInfo(BaseModel):
     model_config = ConfigDict(from_attributes=True)
+    id:str
     original_url:HttpUrl
     short_code:str
     short_url:str
