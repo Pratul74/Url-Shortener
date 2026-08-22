@@ -5,7 +5,7 @@ __all__=[
     'UrlNotFoundException',
     'UrlExpiredException',
     'UrlInactiveException',
-    'AliasAlreadyExistsException'
+    'AliasAlreadyExistsException',
     'UserAlreadyExistsException',
     'InvalidCredentialsException'
 ]
