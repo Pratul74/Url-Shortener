@@ -1,4 +1,11 @@
-from exceptions import UrlExpiredException, UrlInactiveException, UrlNotFoundException, AliasAlreadyExistsException
+from exceptions import (
+    AliasAlreadyExistsException,
+    InvalidCredentialsException,
+    UrlExpiredException,
+    UrlInactiveException,
+    UrlNotFoundException,
+    UserAlreadyExistsException,
+)
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
@@ -29,4 +36,25 @@ def register_exception_handlers(app: FastAPI):
         return JSONResponse(
             status_code=409,
             content={'detail':str(exc)}
+        )
+
+    @app.exception_handler(UserAlreadyExistsException)
+    async def user_already_exists_handler(request: Request, exc: UserAlreadyExistsException):
+        return JSONResponse(
+            status_code=409,
+            content={'detail': str(exc)}
+        )
+
+    @app.exception_handler(InvalidCredentialsException)
+    async def invalid_credentials_handler(request: Request, exc: InvalidCredentialsException):
+        return JSONResponse(
+            status_code=401,
+            content={'detail': str(exc)}
+        )
+
+    @app.exception_handler(PermissionError)
+    async def permission_error_handler(request: Request, exc: PermissionError):
+        return JSONResponse(
+            status_code=403,
+            content={'detail': str(exc)}
         )
