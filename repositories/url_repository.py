@@ -42,7 +42,7 @@ class URLRepository(BaseRepository[Url]):
 
     def deactivate(self, user_id:int, url: Url):
         if url.user_id != user_id:
-            raise PermissionError({"message": "You donot own this url"})
+            raise PermissionError("You do not own this url.")
 
         url.is_active = False
 
