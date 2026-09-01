@@ -48,6 +48,7 @@ class UrlShortenerService(BaseService):
             user_id=user_id
             )
     
+    #This will use redis cache
     def get_original_url(self, short_code:str):
         url = self.repo.get_by_short_code(short_code)
 
@@ -79,6 +80,8 @@ class UrlShortenerService(BaseService):
             raise UrlExpiredException()
         
         return UrlMapper.to_details(url, settings.BASE_URL)
+
+    
     def delete_url(self, user_id:int, short_code):
         url = self.repo.get_by_short_code(short_code)
 
