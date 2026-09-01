@@ -28,6 +28,7 @@ def get_all_url_by_user(db:db_dependency, current_user:CurrentUser):
     service=UrlShortenerService(db)
     return service.list_url_by_user(current_user.id)
 
+#This route will use redis
 @router.get('/{short_code}')
 def get_original_url(short_code:str, db: db_dependency):
     service = UrlShortenerService(db)
