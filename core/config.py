@@ -9,6 +9,7 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     REDIS_HOST:str
     REDIS_PORT:int
+    REDIS_CACHE_TTL_SECONDS: int = 86400
 
     model_config=SettingsConfigDict(
         env_file=".env",
