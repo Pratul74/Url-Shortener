@@ -147,12 +147,14 @@ class URLRepository(BaseRepository[Url]):
         if url.user_id != user_id:
             raise PermissionError("You do not own this url.")
 
-        url.is_active = False
+        
+        smt = update(Url).where(Url.id == url.id).values(is_active=False).returning(Url)
+        db_url = self.db.execute(smt).scalar_one()
 
         self.db.commit()
 
-        self.db.refresh(url)
+        self.db.refresh(db_url)
 
-        self._delete_cached_url(url.short_code)
+        self._delete_cached_url(db_url.short_code)
 
-        return url
+        return db_url
