@@ -29,3 +29,8 @@ class Url(Base):
         "User",
         back_populates="urls",
     )
+
+    click_events = relationship(
+        "ClickEvent",
+        back_populates="url",
+    )
