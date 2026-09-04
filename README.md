@@ -25,6 +25,9 @@ A FastAPI-based URL shortener with user authentication, custom aliases, expiring
 - JWT authentication with `python-jose`
 - Password hashing with `passlib` and `bcrypt`
 
+## Current Architecture
+![Project Architecture](docs/Architecture.png)
+
 ## Project Structure
 
 ```text
