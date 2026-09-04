@@ -10,6 +10,7 @@ class Settings(BaseSettings):
     REDIS_HOST:str
     REDIS_PORT:int
     REDIS_CACHE_TTL_SECONDS: int = 86400
+    GeoLite2_PATH:str
 
     model_config=SettingsConfigDict(
         env_file=".env",
