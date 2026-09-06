@@ -1,0 +1,66 @@
+version: "3.9"
+
+services:
+  url_shortener:
+    build: .
+    container_name: url_shortener
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    command: ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+    environment:
+      DATABASE_URL: postgresql://postgres:${POSTGRES_PASSWORD:-password}@db:5432/url_shortener_db
+      BASE_URL: http://localhost:8000
+      SECRET_KEY: ${SECRET_KEY}
+      GeoLite2_PATH: /usr/share/GeoIP/GeoLite2-City.mmdb
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+    volumes:
+      - ./GeoLite2-City.mmdb:/usr/share/GeoIP/GeoLite2-City.mmdb:ro
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    networks:
+      - url_shortener_network
+
+  db:
+    image: postgres:15
+    container_name: url_shortener_db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: url_shortener_db
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    networks:
+      - url_shortener_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7
+    container_name: url_cache
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    networks:
+      - url_shortener_network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+networks:
+  url_shortener_network:
+
+volumes:
+  db_data:
