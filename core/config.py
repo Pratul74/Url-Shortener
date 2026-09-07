@@ -10,7 +10,16 @@ class Settings(BaseSettings):
     REDIS_HOST:str
     REDIS_PORT:int
     REDIS_CACHE_TTL_SECONDS: int = 86400
-    GeoLite2_PATH:str
+    GEOLITE2_PATH:str
+
+    RABBITMQ_HOST:str
+    RABBITMQ_USER:str
+    RABBITMQ_PORT:int
+    RABBITMQ_PASS:str
+    RABBITMQ_EXCHANGE:str
+    RABBITMQ_QUEUE:str
+    RABBITMQ_ROUTING_KEY:str
+
 
     model_config=SettingsConfigDict(
         env_file=".env",
