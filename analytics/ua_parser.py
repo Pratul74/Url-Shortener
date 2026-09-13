@@ -1,9 +1,10 @@
 from user_agents import parse
+import asyncio
 
 class UserAgentService:
 
-    def parse(self, user_agent: str) -> dict:
-        ua = parse(user_agent)
+    async def parse(self, user_agent: str) -> dict:
+        ua = await asyncio.to_thread(parse, user_agent)
 
         return {
             "browser": ua.browser.family,
