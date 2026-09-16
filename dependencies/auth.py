@@ -5,14 +5,14 @@ from models import User
 from exceptions import InvalidCredentialsException
 from repositories import UserRepository
 from fastapi import Depends
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 from db.session import get_db
 from core.security import decode_access_token
 
 
 oauth2_scheme=OAuth2PasswordBearer(tokenUrl='/auth/login')
 
-def get_current_user(token:str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
+async def get_current_user(token:str = Depends(oauth2_scheme), db: AsyncSession = Depends(get_db)):
     try:
         payload=decode_access_token(token)
 
@@ -26,7 +26,7 @@ def get_current_user(token:str = Depends(oauth2_scheme), db: Session = Depends(g
 
     repo = UserRepository(db)
 
-    user = repo.get_by_id(user_id)
+    user = await repo.get_by_id(user_id)
 
     if user is None:
         raise InvalidCredentialsException()
