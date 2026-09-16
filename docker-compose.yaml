@@ -1,5 +1,3 @@
-version: "3.9"
-
 services:
   url_shortener:
     build: .
@@ -12,16 +10,56 @@ services:
       DATABASE_URL: postgresql://postgres:${POSTGRES_PASSWORD:-password}@db:5432/url_shortener_db
       BASE_URL: http://localhost:8000
       SECRET_KEY: ${SECRET_KEY}
-      GeoLite2_PATH: /usr/share/GeoIP/GeoLite2-City.mmdb
+      GEOLITE2_PATH: /usr/share/GeoIP/GeoLite2-City.mmdb
       REDIS_HOST: redis
       REDIS_PORT: 6379
+      REDIS_CACHE_TTL_SECONDS: 86400
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USER: ${RABBITMQ_USER:-admin}
+      RABBITMQ_PASS: ${RABBITMQ_PASS:-password}
+      RABBITMQ_EXCHANGE: ${RABBITMQ_EXCHANGE:-url_clicks}
+      RABBITMQ_QUEUE: ${RABBITMQ_QUEUE:-url_clicks}
+      RABBITMQ_ROUTING_KEY: ${RABBITMQ_ROUTING_KEY:-click}
     volumes:
-      - ./GeoLite2-City.mmdb:/usr/share/GeoIP/GeoLite2-City.mmdb:ro
+      - ./data/GeoLite2-City.mmdb:/usr/share/GeoIP/GeoLite2-City.mmdb:ro
     depends_on:
       db:
         condition: service_healthy
       redis:
-        condition: service_started
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - url_shortener_network
+
+  analytics_worker:
+    build: .
+    container_name: url_analytics_worker
+    restart: unless-stopped
+    command: ["python", "-m", "analytics.bootstrap"]
+    environment:
+      DATABASE_URL: postgresql://postgres:${POSTGRES_PASSWORD:-password}@db:5432/url_shortener_db
+      BASE_URL: http://localhost:8000
+      SECRET_KEY: ${SECRET_KEY}
+      GEOLITE2_PATH: /usr/share/GeoIP/GeoLite2-City.mmdb
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_CACHE_TTL_SECONDS: 86400
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USER: ${RABBITMQ_USER:-admin}
+      RABBITMQ_PASS: ${RABBITMQ_PASS:-password}
+      RABBITMQ_EXCHANGE: ${RABBITMQ_EXCHANGE:-url_clicks}
+      RABBITMQ_QUEUE: ${RABBITMQ_QUEUE:-url_clicks}
+      RABBITMQ_ROUTING_KEY: ${RABBITMQ_ROUTING_KEY:-click}
+    volumes:
+      - ./data/GeoLite2-City.mmdb:/usr/share/GeoIP/GeoLite2-City.mmdb:ro
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
       rabbitmq:
         condition: service_healthy
     networks:
