@@ -25,23 +25,23 @@ class UrlShortenerService(BaseService):
 
         return expires_at < now
         
-    def generate_short_code(self):
+    async def generate_short_code(self):
         while True:
             short_code = generate_code()
 
-            if not self.repo.short_code_exists(short_code):
+            if not await self.repo.short_code_exists(short_code):
                 return short_code
             
-    def create_short_url(self, original_url, custom_alias=None, expires_at=None, user_id=None):
+    async def create_short_url(self, original_url, custom_alias=None, expires_at=None, user_id=None):
         if custom_alias:
-            if self.repo.short_code_exists(custom_alias):
+            if await self.repo.short_code_exists(custom_alias):
                 raise AliasAlreadyExistsException()
             short_code=custom_alias
         else:
-            short_code=self.generate_short_code()
+            short_code=await self.generate_short_code()
         if expires_at is None:
             expires_at = datetime.now(timezone.utc) + timedelta(minutes=5)
-        return self.repo.create(
+        return await self.repo.create(
             original_url=original_url, 
             short_code=short_code, 
             expires_at=expires_at,
@@ -49,8 +49,8 @@ class UrlShortenerService(BaseService):
             )
     
     #This will use redis cache
-    def get_original_url(self, short_code:str):
-        url = self.repo.get_by_short_code(short_code)
+    async def get_original_url(self, short_code:str):
+        url = await self.repo.get_by_short_code(short_code)
 
         if not url:
             raise UrlNotFoundException()
@@ -61,12 +61,12 @@ class UrlShortenerService(BaseService):
         if self._is_expired(url.expires_at):
             raise UrlExpiredException()
         
-        self.repo.increment_clicks(url)
+        await self.repo.increment_clicks(url)
 
         return url
     
-    def url_details(self, user_id, short_code):
-        url = self.repo.get_by_short_code(short_code)
+    async def url_details(self, user_id, short_code):
+        url = await self.repo.get_by_short_code(short_code)
         if not url:
             raise UrlNotFoundException()
 
@@ -82,8 +82,8 @@ class UrlShortenerService(BaseService):
         return UrlMapper.to_details(url, settings.BASE_URL)
 
     
-    def delete_url(self, user_id:int, short_code):
-        url = self.repo.get_by_short_code(short_code)
+    async def delete_url(self, user_id:int, short_code):
+        url = await self.repo.get_by_short_code(short_code)
 
         if not url:
             raise UrlNotFoundException()
@@ -91,9 +91,9 @@ class UrlShortenerService(BaseService):
         if url.user_id != user_id:
             raise UrlNotFoundException()
         
-        self.repo.deactivate(user_id, url)
+        await self.repo.deactivate(user_id, url)
 
-    def list_url_by_user(self, user_id):
-        urls = self.repo.get_all_by_user(user_id)
+    async def list_url_by_user(self, user_id):
+        urls = await self.repo.get_all_by_user(user_id)
 
         return [UrlMapper.to_details(url, settings.BASE_URL) for url in urls]
