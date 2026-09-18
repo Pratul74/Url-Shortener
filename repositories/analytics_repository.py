@@ -211,4 +211,3 @@ class AnalyticsRepository(BaseRepository[ClickEventModel]):
         return [{"year": int(row.year), "click_count": row.click_count} for row in results]
 
 
-
