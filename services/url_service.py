@@ -1,6 +1,7 @@
 from datetime import datetime, timezone, timedelta
 
 from core import settings
+import uuid
 from exceptions import AliasAlreadyExistsException, UrlNotFoundException, UrlInactiveException, UrlExpiredException
 from mappers import UrlMapper
 from repositories.url_repository import URLRepository
@@ -97,3 +98,14 @@ class UrlShortenerService(BaseService):
         urls = await self.repo.get_all_by_user(user_id)
 
         return [UrlMapper.to_details(url, settings.BASE_URL) for url in urls]
+
+    async def permanent_delete_url(self, user_id: uuid.UUID, short_code: str):
+        url = await self.repo.get_by_short_code(short_code)
+
+        if not url:
+            raise UrlNotFoundException()
+
+        if url.user_id != user_id:
+            raise UrlNotFoundException()
+
+        return await self.repo.permanent_delete_url(user_id=user_id, url=url)
