@@ -1,4 +1,5 @@
 from messaging.events import ClickEvent as ClickEventSchema
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 import asyncio
 from .cache import AnalyticsCache
 from .geoip import GeoIpService
@@ -8,10 +9,10 @@ from schemas import CreateAnalytics
 
 class AnalyticsWorker:
 
-    def __init__(self, geoip: GeoIpService, ua_parser: UserAgentService, analytics_repository: AnalyticsRepository, analytics_cache: AnalyticsCache):
+    def __init__(self, geoip: GeoIpService, ua_parser: UserAgentService, session_factory: async_sessionmaker[AsyncSession], analytics_cache: AnalyticsCache):
         self.geoip = geoip
         self.ua_parser = ua_parser
-        self.repo=analytics_repository
+        self.session_factory = session_factory
         self.cache=analytics_cache
 
     async def process_click(self, event: ClickEventSchema):
@@ -31,7 +32,9 @@ class AnalyticsWorker:
             referrer=event.referrer or "",
             user_agent=event.user_agent,
         )
-
-        await self.repo.create(analytics)
+        async with self.session_factory() as session:
+            repo = AnalyticsRepository(session)
+            await repo.create(analytics)
+            await session.commit()
         await self.cache.update(analytics.url_id, analytics)
         
