@@ -67,6 +67,12 @@ async def delete_url(db:db_dependency, short_code:str, current_user:CurrentUser)
 
     await service.delete_url(current_user.id, short_code)
 
+@router.delete('/permanent_delete/{short_code}')
+async def permanent_delete_url(db: db_dependency, short_code: str, current_user:CurrentUser):
+    service = UrlShortenerService(db)
+
+    await service.permanent_delete_url(user_id=current_user.id, short_code=short_code)
+
 
 async def publish_click_event(click_event: ClickEvent):
     try:
