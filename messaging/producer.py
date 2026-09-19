@@ -14,8 +14,10 @@ class ClickEventProducer:
             content_type='application/json',
             delivery_mode=DeliveryMode.PERSISTENT,
         )
-
+        print("Publishing analytics event...")
         await exchange.publish(
             message,
-            routing_key=settings.RABBITMQ_ROUTING_KEY
+            routing_key=settings.RABBITMQ_ROUTING_KEY,
+            mandatory=True
         )
+        print("Published!")
