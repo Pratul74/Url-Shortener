@@ -1,5 +1,6 @@
 import uuid
 from db.database import Base
+from models import Url
 import datetime
 from sqlalchemy import ForeignKey, String, DateTime, Text
 from sqlalchemy.orm import mapped_column, Mapped, relationship
