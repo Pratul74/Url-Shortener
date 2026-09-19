@@ -51,4 +51,5 @@ class User(Base):
         "Url",
         back_populates="user",
         cascade="all, delete-orphan",
+        passive_deletes=True,
     )
