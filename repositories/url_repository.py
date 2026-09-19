@@ -4,7 +4,7 @@ import uuid
 
 from redis.exceptions import RedisError
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, update
+from sqlalchemy import select, update, delete
 
 from core.config import settings
 from core.redis import redis_client
@@ -163,4 +163,15 @@ class URLRepository(BaseRepository[Url]):
 
         await self._delete_cached_url(db_url.short_code)
 
+        return db_url
+
+    async def permanent_delete_url(self, user_id: uuid.UUID, url: Url):
+        if url.user_id != user_id:
+            raise PermissionError("You do not own this url.")
+        smt = delete(Url).where(Url.id == url.id).returning(Url)
+        result= await self.db.execute(smt)
+        db_url = result.scalar_one()
+        await self.db.commit()
+
+        await self._delete_cached_url(db_url.short_code)
         return db_url
