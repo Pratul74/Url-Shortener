@@ -4,7 +4,7 @@ import asyncio
 
 class GeoIpService:
     def __init__(self):
-        self.reader = Reader(settings.GeoLite2_PATH)
+        self.reader = Reader(settings.GEOLITE2_PATH)
 
     async def lookup(self, ip_address) -> dict | None:
         try:
