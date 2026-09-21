@@ -1,49 +1,62 @@
 # Url Shortener API
 
-A FastAPI-based URL shortener with user authentication, custom aliases, expiring links, click tracking, PostgreSQL persistence, Alembic migrations, and Redis configuration support — evolving toward a full Bitly-style link management platform.
+A FastAPI URL shortener API with JWT authentication, custom short codes, expiring links, Redis-backed lookup caching, PostgreSQL persistence, RabbitMQ click events, and asynchronous analytics processing.
 
 ## Features
 
-- Register and authenticate users with JWT bearer tokens
-- Create short URLs for authenticated users
-- Optional custom aliases, from 3 to 10 characters
-- Optional expiration timestamps
-- Default URL expiration of 5 minutes when no `expires_at` value is provided
-- Redirect short codes to their original URLs
-- Track click counts
-- List, inspect, and deactivate a user's shortened URLs
-- PostgreSQL database schema managed with Alembic
+- User registration and login with JWT bearer tokens
+- Authenticated short URL creation
+- Optional custom aliases between 3 and 10 characters
+- Default link expiration of 5 minutes when `expires_at` is not provided
+- Redirects from short codes to original URLs
+- Click count tracking
+- Redis caching for short-code lookups
+- Soft delete and permanent delete support for user-owned URLs
+- Background click analytics through RabbitMQ
+- GeoIP, user-agent, referrer, browser, OS, device, city, country, and IP analytics
+- PostgreSQL schema management with Alembic
+- Docker Compose setup for API, analytics worker, PostgreSQL, Redis, and RabbitMQ
 
 ## Tech Stack
 
 - Python
 - FastAPI
-- SQLAlchemy
+- SQLAlchemy async ORM
 - Alembic
 - PostgreSQL
 - Redis
+- RabbitMQ
+- Pydantic
 - JWT authentication with `python-jose`
 - Password hashing with `passlib` and `bcrypt`
+- GeoLite2 city database for location analytics
 
-## Current Architecture
+## Architecture
+
 ![Project Architecture](docs/Architecture.png)
 
 ## Project Structure
 
 ```text
 .
-|-- api/              # API routers and route handlers
-|-- core/             # App settings, security, Redis, exception handlers
-|-- db/               # Database engine, session, and dependencies
+|-- analytics/        # Click analytics worker, GeoIP, user-agent parsing, cache updates
+|-- api/              # FastAPI routers and route handlers
+|-- core/             # App settings, Redis client, security, exception handlers
+|-- data/             # Local data files such as GeoLite2-City.mmdb
+|-- db/               # Async database session and dependencies
 |-- dependencies/     # Request dependencies, including current-user auth
+|-- docs/             # Architecture diagram and documentation assets
 |-- exceptions/       # Domain exceptions
 |-- mappers/          # Model-to-schema mapping helpers
+|-- messaging/        # RabbitMQ connection, topology, producer, consumer, event schemas
 |-- migrations/       # Alembic migration files
 |-- models/           # SQLAlchemy models
 |-- repositories/     # Database access layer
 |-- schemas/          # Pydantic request/response schemas
 |-- services/         # Business logic
 |-- utils/            # Utility helpers
+|-- docker-compose.yaml
+|-- Dockerfile
 |-- main.py           # FastAPI application entrypoint
 |-- alembic.ini       # Alembic configuration
 `-- requirements.txt  # Python dependencies
@@ -54,6 +67,38 @@ A FastAPI-based URL shortener with user authentication, custom aliases, expiring
 - Python 3.11 or newer
 - PostgreSQL
 - Redis
+- RabbitMQ
+- GeoLite2 City database file at `data/GeoLite2-City.mmdb`
+
+Docker Compose can run PostgreSQL, Redis, RabbitMQ, the API, and the analytics worker for you.
+
+## Environment Variables
+
+Create a `.env` file in the project root:
+
+```env
+DATABASE_URL=postgresql://postgres:password@localhost:5432/url_shortener_db
+BASE_URL=http://localhost:8000
+SECRET_KEY=replace-with-a-secure-secret
+JWT_ALGORITHM=HS256
+ACCESS_TOKEN_EXPIRE_MINUTES=30
+
+REDIS_HOST=localhost
+REDIS_PORT=6379
+REDIS_CACHE_TTL_SECONDS=86400
+
+GEOLITE2_PATH=data/GeoLite2-City.mmdb
+
+RABBITMQ_HOST=localhost
+RABBITMQ_PORT=5672
+RABBITMQ_USER=admin
+RABBITMQ_PASS=password
+RABBITMQ_EXCHANGE=url_clicks
+RABBITMQ_QUEUE=url_clicks
+RABBITMQ_ROUTING_KEY=click
+```
+
+When running with Docker Compose, the compose file supplies container network values for the services and mounts `./data/GeoLite2-City.mmdb` into the API and analytics worker containers.
 
 ## Setup
 
@@ -70,19 +115,6 @@ Install dependencies:
 pip install -r requirements.txt
 ```
 
-Create a `.env` file in the project root:
-
-```env
-DATABASE_URL=postgresql://postgres:password@localhost:5432/url_shortener
-BASE_URL=http://localhost:8000
-SECRET_KEY=replace-with-a-secure-secret
-JWT_ALGORITHM=HS256
-ACCESS_TOKEN_EXPIRE_MINUTES=30
-REDIS_HOST=localhost
-REDIS_PORT=6379
-REDIS_CACHE_TTL_SECONDS=86400
-```
-
 Apply database migrations:
 
 ```bash
@@ -95,7 +127,13 @@ Run the API:
 uvicorn main:app --reload
 ```
 
-The API will be available at:
+Run the analytics worker in a separate terminal:
+
+```bash
+python -m analytics.bootstrap
+```
+
+The API is available at:
 
 ```text
 http://localhost:8000
@@ -106,6 +144,22 @@ Interactive API docs are available at:
 ```text
 http://localhost:8000/docs
 ```
+
+## Docker Compose
+
+Start the full stack:
+
+```bash
+docker compose up --build
+```
+
+This starts:
+
+- `url_shortener`: FastAPI application on port `8000`
+- `analytics_worker`: RabbitMQ consumer that processes click events
+- `db`: PostgreSQL on port `5432`
+- `redis`: Redis on port `6379`
+- `rabbitmq`: RabbitMQ on port `5672` and management UI on port `15672`
 
 ## API Overview
 
@@ -176,7 +230,7 @@ Content-Type: application/json
 GET /urls/{short_code}
 ```
 
-Redirects to the original URL with a `307 Temporary Redirect`.
+Redirects to the original URL with `307 Temporary Redirect`, increments the URL click count, and publishes a click event for analytics processing.
 
 ### List Current User's URLs
 
@@ -192,91 +246,45 @@ GET /urls/detail/{short_code}
 Authorization: Bearer <token>
 ```
 
-### Delete a URL
+### Soft Delete a URL
 
 ```http
 DELETE /urls/delete/{short_code}
 Authorization: Bearer <token>
 ```
 
-This deactivates the URL instead of physically deleting the database row.
+Marks the URL as inactive and removes its cached Redis entry.
+
+### Permanently Delete a URL
+
+```http
+DELETE /urls/permanent_delete/{short_code}
+Authorization: Bearer <token>
+```
+
+Deletes the URL row from the database and removes its cached Redis entry.
+
+### Analytics Dashboard
+
+```http
+GET /analytics/{url_id}/dashboard?start_date=2026-01-01&end_date=2026-01-31&target_date=2026-01-15&month=1&year=2026&limit=3
+```
+
+Returns click analytics for a URL, including totals, yearly/monthly/daily click counts, top countries, cities, devices, browsers, operating systems, IPs, and grouped click breakdowns.
+
+## Analytics Flow
+
+1. A visitor requests `GET /urls/{short_code}`.
+2. The API validates the URL, increments its click count, and redirects the visitor.
+3. A background task publishes click metadata to RabbitMQ.
+4. The analytics worker consumes the event.
+5. The worker enriches the event with GeoIP and user-agent data.
+6. The enriched analytics record is stored in PostgreSQL and reflected in Redis analytics cache.
 
 ## Development Notes
 
 - Configuration is loaded from `.env` through `pydantic-settings`.
-- `DATABASE_URL`, `BASE_URL`, `SECRET_KEY`, `REDIS_HOST`, and `REDIS_PORT` are required.
-- URL ownership is enforced for authenticated detail and delete operations.
-- Expired or inactive URLs are rejected by the service layer.
+- URL ownership is enforced for authenticated detail, soft delete, and permanent delete operations.
+- Expired or inactive URLs are rejected before redirect/detail responses.
+- Redis lookup caching falls back to PostgreSQL if Redis is unavailable.
 - Alembic migrations live in `migrations/versions`.
-
-## Roadmap — Towards a Full Bitly-Like Platform
-
-The current version covers the core shortening/auth/tracking loop. Planned work is grouped below by area.
-
-### 📊 Advanced Analytics
-- [ ] Click analytics dashboard: clicks over time, peak hours, daily/weekly/monthly trends
-- [ ] Geolocation tracking (country/city) via IP lookup
-- [ ] Device, OS, and browser breakdown from user-agent parsing
-- [ ] Referrer tracking (which site/social platform sent the click)
-- [ ] Unique vs. repeat visitor counts
-- [ ] Exportable analytics (CSV/JSON) per link and per account
-- [ ] Real-time click stream (WebSocket or SSE) for a live dashboard
-
-### 🔗 Link Management
-- [ ] QR code generation for every short link
-- [ ] Bulk link creation (CSV/API batch upload)
-- [ ] Link editing (retarget a short code to a new destination)
-- [ ] Link tags/folders/collections for organization
-- [ ] Password-protected links
-- [ ] Link preview page (interstitial "you're about to visit..." screen), optional per link
-- [ ] UTM parameter builder baked into link creation
-- [ ] Deep link / mobile app link support
-
-### 🌐 Custom Domains
-- [ ] Bring-your-own-domain support (branded short links)
-- [ ] Domain verification (DNS TXT record challenge)
-- [ ] Per-domain SSL certificate provisioning (e.g. via Let's Encrypt/ACME)
-- [ ] Domain-level default settings (expiration, branding)
-
-### 🏢 Teams & Collaboration
-- [ ] Workspaces/organizations with multiple members
-- [ ] Role-based access control (owner/admin/member/viewer)
-- [ ] Shared link collections within a team
-- [ ] Audit log of who created/edited/deleted what
-
-### 🔑 Developer Platform
-- [ ] Public REST API with issued API keys (separate from user JWTs)
-- [ ] Per-key rate limiting and usage quotas
-- [ ] Webhooks for click events and link lifecycle events
-- [ ] SDKs/client libraries (Python, JS) for the public API
-
-### 🛡️ Security & Trust
-- [ ] Rate limiting on link creation and redirects (e.g. via Redis token bucket / `slowapi`)
-- [ ] Malicious/phishing URL scanning before a link goes live (e.g. Google Safe Browsing API integration)
-- [ ] CAPTCHA on public/unauthenticated link creation, if that flow is added
-- [ ] Configurable link expiration policies (max lifetime, auto-archive)
-- [ ] Two-factor authentication for user accounts
-- [ ] Refresh tokens and token revocation/blacklisting alongside the existing JWT flow
-
-### ⚙️ Performance & Infrastructure
-- [ ] Redis used as a full cache-first read layer in front of Postgres for redirects (currently config/TTL support only)
-- [ ] Background task queue (Celery or arq) for click-event processing, so redirects aren't blocked by analytics writes
-- [ ] Horizontal scaling considerations: connection pooling tuning, read replicas
-- [ ] Structured logging and request tracing
-- [ ] Prometheus metrics + Grafana dashboard for API health
-- [ ] Dockerfile + Docker Compose for one-command local/prod-like spin-up
-- [ ] CI pipeline (lint, type-check, tests, migration check) on every PR
-
-### 🎨 Frontend / UX
-- [ ] Web dashboard (React/Next.js) consuming this API: login, link creation, analytics views
-- [ ] Public-facing landing/redirect page with branding
-- [ ] Browser extension for one-click shortening
-
-### 🧪 Quality
-- [ ] Automated test suite (unit + integration) covering services and repositories
-- [ ] Load testing for the redirect path specifically (it's the hottest endpoint)
-- [ ] API contract tests against the OpenAPI schema
-
-## License
-
-Add your preferred license (e.g. MIT) and a `LICENSE` file.
