@@ -21,11 +21,18 @@ class Url(Base):
 
     user_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
-        ForeignKey("users.id"),
+        ForeignKey("users.id", ondelete="CASCADE"),
         nullable=False,
     )
 
     user = relationship(
         "User",
         back_populates="urls",
+    )
+
+    click_events = relationship(
+        "ClickEvent",
+        back_populates="url",
+        cascade="all, delete-orphan",
+        passive_deletes=True
     )

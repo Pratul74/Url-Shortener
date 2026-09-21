@@ -1,0 +1,25 @@
+from geoip2.database import Reader
+from core import settings
+import asyncio
+
+class GeoIpService:
+    def __init__(self):
+        self.reader = Reader(settings.GEOLITE2_PATH)
+
+    async def lookup(self, ip_address) -> dict | None:
+        try:
+            response = await asyncio.to_thread(self.reader.city, ip_address)
+
+            return {
+                "country": response.country.name,
+                "country_code": response.country.iso_code,
+                "continent": response.continent.name,
+                "city": response.city.name,
+                "latitude": response.location.latitude,
+                "longitude": response.location.longitude
+            }
+        except Exception:
+            return None
+
+    async def close(self):
+        self.reader.close()
