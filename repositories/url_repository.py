@@ -10,7 +10,11 @@ from core.config import settings
 from core.redis import redis_client
 
 from models.url import Url
+from models.analytics import Analytics
 from repositories.base import BaseRepository
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class URLRepository(BaseRepository[Url]):
@@ -18,7 +22,7 @@ class URLRepository(BaseRepository[Url]):
         super().__init__(Url, db)
         self.redis_client = redis_client
 
-    async def get_all_by_user(self, user_id):
+    async def get_all_by_user(self, user_id: uuid.UUID):
         result = await self.db.execute(select(Url).where(Url.user_id == user_id))
         return result.scalars().all()
 
@@ -50,7 +54,6 @@ class URLRepository(BaseRepository[Url]):
             "id": str(url.id),
             "original_url": url.original_url,
             "short_code": url.short_code,
-            # "short_url": f"{settings.BASE_URL}/{url.short_code}",
             "clicks": str(url.clicks),
             "is_active": str(url.is_active),
             "created_at": str(self._datetime_to_iso(url.created_at)),
@@ -62,7 +65,7 @@ class URLRepository(BaseRepository[Url]):
         ttl = self._cache_ttl(url)
 
         if ttl <= 0:
-            print("Skipping cache because TTL <= 0")
+            logger.info("Skipping cache because TTL <= 0")
             return
 
         key = self._cache_key(url.short_code)
@@ -71,28 +74,28 @@ class URLRepository(BaseRepository[Url]):
             pipe = self.redis_client.pipeline()
             pipe.hset(key, mapping=self._cache_payload(url))
             pipe.expire(key, ttl)
-            await asyncio.to_thread(pipe.execute)
-            print(f"Cached {key} for {ttl} seconds")
+            await pipe.execute()
+            logger.info(f"Cached {key} for {ttl} seconds")
         except RedisError as e:
-            print(f"Redis SET failed: {e}")
+            logger.exception(f"Redis SET failed: {e}")
 
     async def _delete_cached_url(self, short_code: str) -> None:
         try:
-            await asyncio.to_thread(self.redis_client.delete, self._cache_key(short_code))
+            await self.redis_client.delete(self._cache_key(short_code))
         except RedisError as e:
-            print(f"Redis DELETE failed: {e}")
+            logger.exception(f"Redis DELETE failed: {e}")
 
     async def get_by_short_code(self, short_code: str):
         key = self._cache_key(short_code)
 
         try:
-            cached = await asyncio.to_thread(self.redis_client.hgetall, key)
+            cached = await self.redis_client.hgetall(key)
         except RedisError:
-            print("Redis Unavailable. Proceeding without cache.")
+            logger.exception("Redis Unavailable. Proceeding without cache.")
             cached = None
 
         if cached:
-            print(f"✅Cache hit: {key}")
+            logger.info("Cache hit: %s", key)
             try:
                 cached["id"] = uuid.UUID(cached["id"])
                 cached["clicks"] = int(cached["clicks"])
@@ -104,26 +107,37 @@ class URLRepository(BaseRepository[Url]):
                 cached["user_id"] = uuid.UUID(cached["user_id"])
                 return Url(**cached)
             except (KeyError, TypeError, ValueError):
-                print(f"❌ Invalid cache entry: {key}")
+                logger.exception("Invalid cache entry: %s", key)
                 await self._delete_cached_url(short_code)
 
-        print(f"⚠️ Cache MISS: {key}")
+        logger.info("Cache Miss: %s", key)
         result = await self.db.execute(select(Url).where(Url.short_code == short_code))
         url = result.scalars().first()
 
         if url:
-            print(f"💾 Writing to cache: {key}")
+            logger.info("Writing to cache: %s", key)
             await self._cache_url(url)
 
         return url
 
     async def create(self, **kwargs):
-        url = await super().create(**kwargs)
+        try:
+            url = Url(**kwargs)
+            self.db.add(url)
+            await self.db.flush()
+
+            self.db.add(Analytics(url_id=url.id))
+            await self.db.commit()
+            await self.db.refresh(url)
+        except Exception as e:
+            logger.exception(f"Database transaction failed")
+            await self.db.rollback()
+            raise
         await self._cache_url(url)
 
         return url
 
-    async def get_by_original_url(self, original_url: str, user_id:int):
+    async def get_by_original_url(self, original_url: str, user_id:uuid.UUID):
         result = await self.db.execute(
             select(Url)
             .where(Url.user_id == user_id)
@@ -135,26 +149,25 @@ class URLRepository(BaseRepository[Url]):
         return await self.get_by_short_code(short_code) is not None
 
     async def increment_clicks(self, url: Url):
-        smt = update(Url).where(Url.id == url.id).values(clicks=Url.clicks+1).returning(Url)
-        result = await self.db.execute(smt)
+        stmt = update(Url).where(Url.id == url.id).values(clicks=Url.clicks+1).returning(Url)
+        result = await self.db.execute(stmt)
         db_url = result.scalar_one()
         await self.db.commit()
         key = self._cache_key(db_url.short_code)
         try:
-            exists = await asyncio.to_thread(self.redis_client.exists, key)
-            if exists:
-                await asyncio.to_thread(self.redis_client.hincrby, key, "clicks", 1)
+            if await self.redis_client.exists(key):
+                await self.redis_client.hincrby(key, "clicks", 1)
         except RedisError:
-            print("Redis Unavailable. Proceeding without cache.")
+            logger.exception("Redis Unavailable. Proceeding without cache.")
         return db_url
 
-    async def deactivate(self, user_id:int, url: Url):
+    async def deactivate(self, user_id:uuid.UUID, url: Url):
         if url.user_id != user_id:
             raise PermissionError("You do not own this url.")
 
         
-        smt = update(Url).where(Url.id == url.id).values(is_active=False).returning(Url)
-        result = await self.db.execute(smt)
+        stmt = update(Url).where(Url.id == url.id).values(is_active=False).returning(Url)
+        result = await self.db.execute(stmt)
         db_url = result.scalar_one()
 
         await self.db.commit()
@@ -168,8 +181,8 @@ class URLRepository(BaseRepository[Url]):
     async def permanent_delete_url(self, user_id: uuid.UUID, url: Url):
         if url.user_id != user_id:
             raise PermissionError("You do not own this url.")
-        smt = delete(Url).where(Url.id == url.id).returning(Url)
-        result= await self.db.execute(smt)
+        stmt = delete(Url).where(Url.id == url.id).returning(Url)
+        result= await self.db.execute(stmt)
         db_url = result.scalar_one()
         await self.db.commit()
 
