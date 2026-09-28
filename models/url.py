@@ -30,8 +30,8 @@ class Url(Base):
         back_populates="urls",
     )
 
-    click_events = relationship(
-        "ClickEvent",
+    analytics = relationship(
+        "Analytics",
         back_populates="url",
         cascade="all, delete-orphan",
         passive_deletes=True
