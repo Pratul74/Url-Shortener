@@ -1,4 +1,4 @@
-from redis import Redis
+from redis.asyncio import Redis
 from core import settings
 
 redis_client = Redis.from_url(
