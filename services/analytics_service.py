@@ -1,97 +1,56 @@
-import asyncio
+import logging
 import uuid
-from datetime import date
+
+from analytics.parsing import DICT_METRICS, merge_counts, parse_hash
+from core.redis import redis_client
+from exceptions import UrlNotFoundException
 from repositories import AnalyticsRepository
+from repositories import URLRepository
+from sqlalchemy.ext.asyncio import AsyncSession
 from .base import BaseService
+
+logger = logging.getLogger(__name__)
 
 
 class AnalyticsService(BaseService):
-    def __init__(self, db):
+
+    def __init__(self, db: AsyncSession):
         super().__init__(db)
-        self.repo = AnalyticsRepository(db)
+        self.cache = redis_client
+        self.analytics_repo = AnalyticsRepository(db)
+        self.url_repo = URLRepository(db)
 
-    async def get_analytics_dashboard(
-        self,
-        url_id: uuid.UUID,
-        start_date: date,
-        end_date: date,
-        target_date: date,
-        month: int,
-        year: int,
-        limit: int = 3,
-    ):
-        (
-            total_clicks,
-            clicks_per_year,
-            clicks_per_months,
-            clicks_per_day,
-            top_country,
-            top_city,
-            top_device,
-            top_browser,
-            top_os,
-            top_ip,
-            top_n_country,
-            top_n_cities,
-            top_n_os,
-            top_n_ips,
-            top_n_browsers,
-            click_per_country,
-            click_per_city,
-            click_per_os,
-            click_per_browser,
-            click_between_dates,
-            clicks_in_year,
-            clicks_in_month,
-            clicks_in_day,
-        ) = await asyncio.gather(
-            self.repo.get_total_clicks(url_id=url_id),
-            self.repo.get_clicks_per_year(url_id=url_id),
-            self.repo.get_clicks_per_month(url_id=url_id, year=year),
-            self.repo.get_clicks_per_day(url_id=url_id, start_date=start_date, end_date=end_date),
-            self.repo.get_top_country(url_id=url_id),
-            self.repo.get_top_city(url_id=url_id),
-            self.repo.get_top_device(url_id=url_id),
-            self.repo.get_top_browser(url_id=url_id),
-            self.repo.get_top_os(url_id=url_id),
-            self.repo.get_top_ip(url_id=url_id),
-            self.repo.get_top_n_countries(url_id=url_id, limit=limit),
-            self.repo.get_top_n_cities(url_id=url_id, limit=limit),
-            self.repo.get_top_n_os(url_id=url_id, limit=limit),
-            self.repo.get_top_n_ips(url_id=url_id, limit=limit),
-            self.repo.get_top_n_browsers(url_id=url_id, limit=limit),
-            self.repo.click_per_country(url_id=url_id),
-            self.repo.click_per_city(url_id=url_id),
-            self.repo.click_per_os(url_id=url_id),
-            self.repo.click_per_browser(url_id=url_id),
-            self.repo.get_clicks_between_dates(url_id=url_id, start_date=start_date, end_date=end_date),
-            self.repo.get_clicks_in_year(url_id=url_id, year=year),
-            self.repo.get_clicks_in_month(url_id=url_id, month=month, year=year),
-            self.repo.get_clicks_on_date(url_id=url_id, target_date=target_date),
-        )
+    @staticmethod
+    def _key(url_id: uuid.UUID) -> str:
+        return f"analytics:{url_id}"
 
-        return {
-            "total_clicks": total_clicks,
-            "clicks_per_year": clicks_per_year,
-            "clicks_per_months": clicks_per_months,
-            "clicks_per_day": clicks_per_day,
-            "top_country": top_country,
-            "top_city": top_city,
-            "top_device": top_device,
-            "top_browsers": top_browser,
-            "top_os": top_os,
-            "top_ip": top_ip,
-            "top_n_country": top_n_country,
-            "top_n_cities": top_n_cities,
-            "top_n_os": top_n_os,
-            "top_n_ips": top_n_ips,
-            "top_n_browsers": top_n_browsers,
-            "click_per_country": click_per_country,
-            "click_per_city": click_per_city,
-            "click_per_os": click_per_os,
-            "click_per_browser": click_per_browser,
-            "click_between_dates": click_between_dates,
-            "clicks_in_year": clicks_in_year,
-            "clicks_in_month": clicks_in_month,
-            "clicks_in_day": clicks_in_day,
+    async def _get_pending(self, url_id: uuid.UUID) -> dict:
+        try:
+            raw = await self.cache.hgetall(self._key(url_id))
+        except Exception:
+            logger.exception("Redis unavailable for url_id=%s", url_id)
+            raw = {}
+        return parse_hash(raw)
+
+    async def get_analytics(self, user_id: uuid.UUID, url_id: uuid.UUID) -> dict:
+        url = await self.url_repo.get_by_id(url_id)
+        if not url or url.user_id != user_id:
+            raise UrlNotFoundException()
+
+        persisted = await self.analytics_repo.get_by_url_id(url_id)
+        pending = await self._get_pending(url_id)
+
+        result = {
+            "url_id": url_id,
+            "total_clicks": (persisted.total_clicks if persisted else 0) + pending["total_clicks"],
         }
+        for metric in DICT_METRICS:
+            result[metric] = merge_counts(getattr(persisted, metric, None), pending[metric])
+        return result
+
+        
+
+
+
+    
+        
