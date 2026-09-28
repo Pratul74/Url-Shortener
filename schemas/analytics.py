@@ -23,10 +23,6 @@ class Os(BaseModel):
     os: str
     click_count: int
 
-class Ip(BaseModel):
-    ip_address: str
-    click_count: int
-
 class CreateAnalytics(BaseModel):
     url_id: uuid.UUID
     ip_address: str
@@ -37,3 +33,13 @@ class CreateAnalytics(BaseModel):
     os: Optional[str] = None
     referrer: Optional[str] = None
     user_agent: str
+
+class AnalyticsOut(BaseModel):
+    url_id: uuid.UUID
+    total_clicks: int
+    countries: dict[str, int]
+    cities: dict[str, int]
+    browsers: dict[str, int]
+    os: dict[str, int]
+    device: dict[str, int]
+    referrer: dict[str, int]

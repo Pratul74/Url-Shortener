@@ -1,9 +1,9 @@
 from .url import Url
 from .user import User
-from .analytics import ClickEvent
+from .analytics import Analytics
 
 __all__=[
     'User',
     'Url',
-    'ClickEvent',
+    'Analytics',
 ]

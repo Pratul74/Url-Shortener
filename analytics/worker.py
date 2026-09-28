@@ -6,6 +6,7 @@ from .geoip import GeoIpService
 from .ua_parser import UserAgentService
 from repositories import AnalyticsRepository
 from schemas import CreateAnalytics
+from models import Analytics
 
 class AnalyticsWorker:
 
@@ -21,7 +22,7 @@ class AnalyticsWorker:
                 self.ua_parser.parse(event.user_agent),
         )
 
-        analytics = CreateAnalytics(
+        analytics_schema = CreateAnalytics(
             url_id=event.url_id,
             ip_address=event.ip,
             country=(geoip_info or {}).get('country') or "Unknown",
@@ -32,9 +33,6 @@ class AnalyticsWorker:
             referrer=event.referrer or "",
             user_agent=event.user_agent,
         )
-        async with self.session_factory() as session:
-            repo = AnalyticsRepository(session)
-            await repo.create(analytics)
-            await session.commit()
-        await self.cache.update(analytics.url_id, analytics)
+
+        await self.cache.update(event.url_id, analytics_schema)
         
