@@ -1,4 +1,4 @@
-DICT_METRICS = ("country", "city", "browser", "os", "device")
+DICT_METRICS = ("country", "city", "browser", "os", "device", "referrer")
 
 
 def parse_hash(hashes: dict) -> dict:
