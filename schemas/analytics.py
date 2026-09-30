@@ -37,9 +37,9 @@ class CreateAnalytics(BaseModel):
 class AnalyticsOut(BaseModel):
     url_id: uuid.UUID
     total_clicks: int
-    countries: dict[str, int]
-    cities: dict[str, int]
-    browsers: dict[str, int]
+    country: dict[str, int]
+    city: dict[str, int]
+    browser: dict[str, int]
     os: dict[str, int]
     device: dict[str, int]
     referrer: dict[str, int]
