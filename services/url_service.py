@@ -5,7 +5,7 @@ import uuid
 from exceptions import AliasAlreadyExistsException, UrlNotFoundException, UrlInactiveException, UrlExpiredException
 from mappers import UrlMapper
 from repositories.url_repository import URLRepository
-from utils.generator import generate_code
+from utils import encode, IDGenerator
 from .base import BaseService
 
 class UrlShortenerService(BaseService):
@@ -13,6 +13,7 @@ class UrlShortenerService(BaseService):
     def __init__(self, db):
         super().__init__(db)
         self.repo=URLRepository(db)
+        self.generator=IDGenerator(worker_id=1)
 
     @staticmethod
     def _is_expired(expires_at: datetime | None) -> bool:
@@ -25,24 +26,19 @@ class UrlShortenerService(BaseService):
             now = now.replace(tzinfo=None)
 
         return expires_at < now
-        
-    async def generate_short_code(self):
-        while True:
-            short_code = generate_code()
-
-            if not await self.repo.short_code_exists(short_code):
-                return short_code
             
     async def create_short_url(self, original_url, custom_alias=None, expires_at=None, user_id=None):
+        url_id=await self.generator.next_id()
         if custom_alias:
             if await self.repo.short_code_exists(custom_alias):
                 raise AliasAlreadyExistsException()
             short_code=custom_alias
         else:
-            short_code=await self.generate_short_code()
+            short_code=encode(url_id)
         if expires_at is None:
             expires_at = datetime.now(timezone.utc) + timedelta(minutes=5)
         return await self.repo.create(
+            id=url_id,
             original_url=original_url, 
             short_code=short_code, 
             expires_at=expires_at,
