@@ -1,5 +1,4 @@
 from datetime import datetime, timezone
-import asyncio
 import uuid
 
 from redis.exceptions import RedisError
@@ -51,7 +50,7 @@ class URLRepository(BaseRepository[Url]):
 
     def _cache_payload(self, url: Url) -> dict[str, str | int | bool | None]:
         return {
-            "id": str(url.id),
+            "id": int(url.id),
             "original_url": url.original_url,
             "short_code": url.short_code,
             "clicks": str(url.clicks),
