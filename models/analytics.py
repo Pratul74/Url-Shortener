@@ -1,15 +1,14 @@
-import uuid
 from db.database import Base
 from models import Url
 import datetime
 from sqlalchemy import ForeignKey, DateTime, BigInteger
 from sqlalchemy.orm import mapped_column, Mapped, relationship
 from sqlalchemy.sql import func
-from sqlalchemy.dialects.postgresql import UUID, JSONB
+from sqlalchemy.dialects.postgresql import JSONB
 
 class Analytics(Base):
     __tablename__ = "analytics"
-    url_id : Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("urls.id", ondelete="CASCADE"), primary_key=True, unique=True, index=True)
+    url_id : Mapped[int] = mapped_column(BigInteger, ForeignKey("urls.id", ondelete="CASCADE"), primary_key=True, unique=True, index=True, autoincrement=False)
     total_clicks : Mapped[int] = mapped_column(BigInteger, nullable=False, default=0)
     country : Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict,)
     city : Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict,)
