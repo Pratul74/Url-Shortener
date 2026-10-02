@@ -21,10 +21,10 @@ class AnalyticsService(BaseService):
         self.url_repo = URLRepository(db)
 
     @staticmethod
-    def _key(url_id: uuid.UUID) -> str:
+    def _key(url_id: int) -> str:
         return f"analytics:{url_id}"
 
-    async def _get_pending(self, url_id: uuid.UUID) -> dict:
+    async def _get_pending(self, url_id: int) -> dict:
         try:
             raw = await self.cache.hgetall(self._key(url_id))
         except Exception:
@@ -32,7 +32,7 @@ class AnalyticsService(BaseService):
             raw = {}
         return parse_hash(raw)
 
-    async def get_analytics(self, user_id: uuid.UUID, url_id: uuid.UUID) -> dict:
+    async def get_analytics(self, user_id: uuid.UUID, url_id: int) -> dict:
         url = await self.url_repo.get_by_id(url_id)
         if not url or url.user_id != user_id:
             raise UrlNotFoundException()
