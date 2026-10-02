@@ -12,6 +12,6 @@ router = APIRouter(
 
 
 @router.get("/{url_id}/dashboard", response_model=AnalyticsOut)
-async def get_dashboard(url_id: uuid.UUID, db: db_dependency, user: CurrentUser):
+async def get_dashboard(url_id: int, db: db_dependency, user: CurrentUser):
     service = AnalyticsService(db)
     return await service.get_analytics(user_id=user.id, url_id=url_id)
