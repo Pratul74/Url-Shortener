@@ -1,5 +1,4 @@
 from pydantic import BaseModel
-import uuid
 from typing import Optional
 
 class Country(BaseModel):
@@ -24,7 +23,7 @@ class Os(BaseModel):
     click_count: int
 
 class CreateAnalytics(BaseModel):
-    url_id: uuid.UUID
+    url_id: int
     ip_address: str
     country: Optional[str] = None
     city: Optional[str] = None
@@ -35,7 +34,7 @@ class CreateAnalytics(BaseModel):
     user_agent: str
 
 class AnalyticsOut(BaseModel):
-    url_id: uuid.UUID
+    url_id: int
     total_clicks: int
     country: dict[str, int]
     city: dict[str, int]
