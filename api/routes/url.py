@@ -44,7 +44,7 @@ async def get_original_url(
     background_tasks.add_task(
         publish_click_event,
         ClickEvent(
-            url_id=str(url.id),
+            url_id=int(url.id),
             short_code=url.short_code,
             ip=request.client.host if request.client else "",
             user_agent=request.headers.get("user-agent", ""),
