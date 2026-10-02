@@ -3,7 +3,7 @@ from typing import Optional
 from datetime import datetime
 
 class ClickEvent(BaseModel):
-    url_id: str
+    url_id: int
     short_code: str
     ip: str
     user_agent: str
