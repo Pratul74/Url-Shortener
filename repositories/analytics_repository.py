@@ -12,7 +12,7 @@ class AnalyticsRepository(BaseRepository[Analytics]):
     def __init__(self, db: AsyncSession):
         super().__init__(Analytics, db)
 
-    async def get_by_url_id(self, url_id: uuid.UUID) -> Analytics | None:
+    async def get_by_url_id(self, url_id: int) -> Analytics | None:
         result = await self.db.execute(
             select(self.model).where(self.model.url_id == url_id)
         )
