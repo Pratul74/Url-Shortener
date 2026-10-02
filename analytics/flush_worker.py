@@ -32,7 +32,7 @@ class AnalyticsFlushWorker:
         except ResponseError:
             return None 
 
-    async def _merge_analytics(self, url_id: uuid.UUID, data: dict, repo: AnalyticsRepository):
+    async def _merge_analytics(self, url_id: int, data: dict, repo: AnalyticsRepository):
         analytics = await repo.get_by_url_id(url_id=url_id)
         if not analytics:
             logger.warning("No analytics row for url_id=%s; dropping flushed data", url_id)
@@ -43,7 +43,7 @@ class AnalyticsFlushWorker:
         await repo.update(analytics)
 
     async def _process(self, temp_key: str, session: AsyncSession, repo: AnalyticsRepository):
-        url_id = uuid.UUID(temp_key.split(":")[2])
+        url_id = int(temp_key.split(":")[2])
         raw = await self.cache.hgetall(temp_key)
         if raw:
             await self._merge_analytics(url_id, parse_hash(raw), repo)
