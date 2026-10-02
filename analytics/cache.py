@@ -11,7 +11,7 @@ class AnalyticsCache:
         self.redis_client = redis_client or default_redis_client
 
     @staticmethod
-    def _key(url_id: uuid.UUID):
+    def _key(url_id: int):
         return f"analytics:{url_id}"
 
     @staticmethod
@@ -25,7 +25,7 @@ class AnalyticsCache:
         )
 
 
-    async def update(self, url_id: uuid.UUID, event: CreateAnalytics):
+    async def update(self, url_id: int, event: CreateAnalytics):
         key = self._key(url_id)
         pipeline = self.redis_client.pipeline()
         pipeline.hincrby(self._key(url_id), "total_clicks", 1)
