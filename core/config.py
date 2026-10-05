@@ -11,6 +11,7 @@ class Settings(BaseSettings):
     REDIS_PORT:int
     REDIS_CACHE_TTL_SECONDS: int = 86400
     GEOLITE2_PATH:str
+    FRONTEND_ORIGINS: str = "http://localhost:5173,http://localhost:3000,http://localhost:8080"
 
     RABBITMQ_HOST:str
     RABBITMQ_USER:str
