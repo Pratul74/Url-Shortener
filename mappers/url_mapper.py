@@ -9,7 +9,7 @@ class UrlMapper:
                             id=str(url.id), 
                             original_url=str(url.original_url), 
                             short_code=url.short_code, 
-                            short_url=f"{base_url}/{url.short_code}",
+                            short_url=f"{base_url}/urls/{url.short_code}",
                             clicks=url.clicks,
                             created_at=url.created_at,
                             expires_at=url.expires_at
@@ -19,9 +19,9 @@ class UrlMapper:
     def to_details(url: Url, base_url:str):
         return UrlInfo(
             id=str(url.id),
-            original_url=url.original_url,
+            original_url=str(url.original_url),
             short_code=url.short_code,
-            short_url=f"{base_url}/{url.short_code}",
+            short_url=f"{base_url}/urls/{url.short_code}",
             clicks=url.clicks,
             is_active=url.is_active,
             created_at=url.created_at,
