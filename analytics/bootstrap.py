@@ -9,9 +9,11 @@ from .ua_parser import UserAgentService
 from .worker import AnalyticsWorker
 from messaging.consumer import ClickConsumer
 from .cache import AnalyticsCache
+from .flush_worker import AnalyticsFlushWorker
 
 async def main():
     geoip = None
+    flush_task = None
 
     try:
         await RabbitMQTopology.initialize()
@@ -23,8 +25,13 @@ async def main():
         consumer = ClickConsumer(worker)
 
         await consumer.consume()
+        flush_task = asyncio.create_task(
+            AnalyticsFlushWorker(AsyncSessionLocal).run_forever()
+        )
         await asyncio.Future()
     finally:
+        if flush_task is not None:
+            flush_task.cancel()
         if geoip is not None:
             await geoip.close()
         await close_db()
