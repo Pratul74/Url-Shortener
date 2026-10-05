@@ -1,5 +1,4 @@
 from fastapi import APIRouter
-import uuid
 from db import db_dependency
 from dependencies import CurrentUser
 from services import AnalyticsService
@@ -14,4 +13,14 @@ router = APIRouter(
 @router.get("/{url_id}/dashboard", response_model=AnalyticsOut)
 async def get_dashboard(url_id: int, db: db_dependency, user: CurrentUser):
     service = AnalyticsService(db)
-    return await service.get_analytics(user_id=user.id, url_id=url_id)
+    dashboard = await service.get_analytics(user_id=user.id, url_id=url_id)
+    return AnalyticsOut(
+        url_id=str(dashboard['url_id']),
+        total_clicks=dashboard['total_clicks'],
+        country=dashboard['country'],
+        city=dashboard['city'],
+        browser=dashboard['browser'],
+        os=dashboard['os'],
+        device=dashboard['device'],
+        referrer=dashboard['referrer']
+    )
