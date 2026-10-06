@@ -40,17 +40,12 @@ class AnalyticsService(BaseService):
         persisted = await self.analytics_repo.get_by_url_id(url_id)
         pending = await self._get_pending(url_id)
 
+        analytics_total = (persisted.total_clicks if persisted else 0) + pending["total_clicks"]
+
         result = {
             "url_id": url_id,
-            "total_clicks": (persisted.total_clicks if persisted else 0) + pending["total_clicks"],
+            "total_clicks": max(analytics_total, url.clicks or 0),
         }
         for metric in DICT_METRICS:
             result[metric] = merge_counts(getattr(persisted, metric, None), pending[metric])
         return result
-
-        
-
-
-
-    
-        
