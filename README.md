@@ -1,11 +1,13 @@
 # Url Shortener API
 
-A production-oriented URL shortener with a FastAPI backend, a React frontend, JWT authentication, custom short codes, expiring links, Redis-backed lookup caching, PostgreSQL persistence, RabbitMQ click events, and asynchronous analytics processing.
+A production-oriented URL shortener built with FastAPI and React that demonstrates scalable backend design using Snowflake ID generation, Base62 encoding, Redis caching, RabbitMQ event-driven analytics, asynchronous workers, PostgreSQL persistence, and Dockerized deployment.
 
 ## Features
 
 - User registration and login with JWT bearer tokens
 - Authenticated short URL creation
+- Distributed Snowflake ID generation for globally unique URL identifiers
+- Base62 encoding of Snowflake IDs to generate compact short URLs
 - Optional custom aliases between 3 and 10 characters
 - Default link expiration of 5 minutes when `expires_at` is not provided
 - Redirects from short codes to original URLs
@@ -36,9 +38,64 @@ A production-oriented URL shortener with a FastAPI backend, a React frontend, JW
 - Tailwind CSS
 - Nginx for the production frontend container
 
+## URL Generation Strategy
+
+Every shortened URL is generated in two stages:
+
+1. A globally unique **Snowflake ID** is generated.
+2. The numeric Snowflake ID is converted into a compact **Base62** string.
+
+Example:
+Snowflake ID
+↓
+781623419872391234
+↓
+Base62 Encoding
+↓
+aZ91Kd
+
+This approach provides:
+
+- Globally unique identifiers
+- Chronologically sortable IDs
+- No database sequence bottlenecks
+- Compact, URL-friendly short codes
+- High throughput suitable for distributed systems
+
+Custom aliases bypass Base62 generation while still maintaining uniqueness validation.
+
 ## Architecture
 
 ![Project Architecture](backend/docs/Architecture.png)
+
+## Architecture Highlights
+
+The application follows a layered architecture:
+
+- API Layer (FastAPI routers)
+- Service Layer (business logic)
+- Repository Layer (database abstraction)
+- PostgreSQL for persistent storage
+- Redis for caching and analytics aggregation
+- RabbitMQ for asynchronous event processing
+- Dedicated analytics workers
+- React frontend consuming REST APIs
+
+## Production Features
+
+- Layered architecture
+- Async SQLAlchemy ORM
+- Repository pattern
+- JWT authentication
+- Redis caching
+- RabbitMQ event-driven architecture
+- Snowflake distributed ID generation
+- Base62 short-code generation
+- Soft delete support
+- Background analytics processing
+- Dockerized deployment
+- Alembic database migrations
+- Nginx frontend serving
 
 ## Project Structure
 
@@ -341,12 +398,50 @@ Returns click analytics for a URL, including totals, yearly/monthly/daily click 
 
 ## Analytics Flow
 
-1. A visitor requests `GET /urls/{short_code}`.
-2. The API validates the URL, increments its click count, and redirects the visitor.
-3. A background task publishes click metadata to RabbitMQ.
-4. The analytics worker consumes the event.
-5. The worker enriches the event with GeoIP and user-agent data.
-6. The enriched analytics record is stored in PostgreSQL and reflected in Redis analytics cache.
+1. Client requests GET /urls/{short_code}
+2. Redis is checked for the short code.
+3. On cache miss, PostgreSQL is queried and Redis is updated.
+4. URL validity (expiration and active state) is verified.
+5. Click count is incremented.
+6. Redirect response (307) is returned.
+7. Click metadata is published to RabbitMQ.
+8. Analytics worker consumes the event.
+9. GeoIP and User-Agent information are extracted.
+10. Analytics aggregates are updated in Redis.
+11. Periodic flush workers persist aggregated analytics into PostgreSQL.
+
+## Design Decisions
+
+### Snowflake IDs
+
+Each URL receives a globally unique 64-bit Snowflake ID before persistence. Snowflake IDs are:
+
+- Time sortable
+- Distributed
+- Collision resistant
+- Generated without database locks
+
+### Base62 Encoding
+
+Instead of exposing numeric IDs directly, Snowflake IDs are Base62 encoded using:
+
+0-9
+A-Z
+a-z
+
+This creates compact, URL-safe short codes while preserving uniqueness.
+
+### Redis Cache
+
+Redis caches URL lookups to reduce PostgreSQL load during redirects.
+
+### RabbitMQ
+
+Click events are processed asynchronously so redirect latency remains low.
+
+### Flush Worker
+
+Analytics aggregates are periodically flushed from Redis into PostgreSQL to reduce write amplification.
 
 ## Development Notes
 
@@ -355,3 +450,18 @@ Returns click analytics for a URL, including totals, yearly/monthly/daily click 
 - Expired or inactive URLs are rejected before redirect/detail responses.
 - Redis lookup caching falls back to PostgreSQL if Redis is unavailable.
 - Alembic migrations live in `backend/migrations/versions`.
+
+## Future Improvements
+
+- QR code generation
+- Link password protection
+- Custom domains
+- Rate limiting
+- Bulk URL shortening
+- Link tags and folders
+- Team workspaces
+- Public analytics pages
+- Click fraud detection
+- Prometheus and Grafana monitoring
+- Kubernetes deployment
+- CI/CD pipeline with GitHub Actions
