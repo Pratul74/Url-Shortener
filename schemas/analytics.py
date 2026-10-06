@@ -34,7 +34,7 @@ class CreateAnalytics(BaseModel):
     user_agent: str
 
 class AnalyticsOut(BaseModel):
-    url_id: int
+    url_id: str
     total_clicks: int
     country: dict[str, int]
     city: dict[str, int]
