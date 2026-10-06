@@ -1,6 +1,6 @@
 # Url Shortener API
 
-A FastAPI URL shortener API with JWT authentication, custom short codes, expiring links, Redis-backed lookup caching, PostgreSQL persistence, RabbitMQ click events, and asynchronous analytics processing.
+A production-oriented URL shortener with a FastAPI backend, a React frontend, JWT authentication, custom short codes, expiring links, Redis-backed lookup caching, PostgreSQL persistence, RabbitMQ click events, and asynchronous analytics processing.
 
 ## Features
 
@@ -14,8 +14,9 @@ A FastAPI URL shortener API with JWT authentication, custom short codes, expirin
 - Soft delete and permanent delete support for user-owned URLs
 - Background click analytics through RabbitMQ
 - GeoIP, user-agent, referrer, browser, OS, device, city, country, and IP analytics
+- React dashboard for authentication, short-link creation, link management, and analytics views
 - PostgreSQL schema management with Alembic
-- Docker Compose setup for API, analytics worker, PostgreSQL, Redis, and RabbitMQ
+- Docker Compose setup for frontend, API, analytics worker, PostgreSQL, Redis, and RabbitMQ
 
 ## Tech Stack
 
@@ -30,6 +31,10 @@ A FastAPI URL shortener API with JWT authentication, custom short codes, expirin
 - JWT authentication with `python-jose`
 - Password hashing with `passlib` and `bcrypt`
 - GeoLite2 city database for location analytics
+- React
+- Vite
+- Tailwind CSS
+- Nginx for the production frontend container
 
 ## Architecture
 
@@ -47,6 +52,7 @@ A FastAPI URL shortener API with JWT authentication, custom short codes, expirin
 |-- dependencies/     # Request dependencies, including current-user auth
 |-- docs/             # Architecture diagram and documentation assets
 |-- exceptions/       # Domain exceptions
+|-- frontend/         # React/Vite frontend application and Nginx image
 |-- mappers/          # Model-to-schema mapping helpers
 |-- messaging/        # RabbitMQ connection, topology, producer, consumer, event schemas
 |-- migrations/       # Alembic migration files
@@ -68,9 +74,10 @@ A FastAPI URL shortener API with JWT authentication, custom short codes, expirin
 - PostgreSQL
 - Redis
 - RabbitMQ
+- Node.js 22 or newer for local frontend development
 - GeoLite2 City database file at `data/GeoLite2-City.mmdb`
 
-Docker Compose can run PostgreSQL, Redis, RabbitMQ, the API, and the analytics worker for you.
+Docker Compose can run the frontend, PostgreSQL, Redis, RabbitMQ, the API, and the analytics worker for you.
 
 ## Environment Variables
 
@@ -88,6 +95,7 @@ REDIS_PORT=6379
 REDIS_CACHE_TTL_SECONDS=86400
 
 GEOLITE2_PATH=data/GeoLite2-City.mmdb
+FRONTEND_ORIGINS=http://localhost:5173,http://localhost:3000
 
 RABBITMQ_HOST=localhost
 RABBITMQ_PORT=5672
@@ -100,7 +108,13 @@ RABBITMQ_ROUTING_KEY=click
 
 When running with Docker Compose, the compose file supplies container network values for the services and mounts `./data/GeoLite2-City.mmdb` into the API and analytics worker containers.
 
-## Setup
+The frontend uses `frontend/.env` for local development:
+
+```env
+VITE_API_URL=http://localhost:8000
+```
+
+## Backend Setup
 
 Create and activate a virtual environment:
 
@@ -145,6 +159,35 @@ Interactive API docs are available at:
 http://localhost:8000/docs
 ```
 
+## Frontend Setup
+
+Install frontend dependencies:
+
+```bash
+cd frontend
+npm install
+```
+
+Run the Vite development server:
+
+```bash
+npm run dev
+```
+
+The frontend is available at:
+
+```text
+http://localhost:5173
+```
+
+Useful frontend commands:
+
+```bash
+npm run lint
+npm run build
+npm run preview
+```
+
 ## Docker Compose
 
 Start the full stack:
@@ -155,11 +198,24 @@ docker compose up --build
 
 This starts:
 
+- `frontend`: React application served by Nginx on port `3000`
 - `url_shortener`: FastAPI application on port `8000`
 - `analytics_worker`: RabbitMQ consumer that processes click events
 - `db`: PostgreSQL on port `5432`
 - `redis`: Redis on port `6379`
 - `rabbitmq`: RabbitMQ on port `5672` and management UI on port `15672`
+
+Open the application at:
+
+```text
+http://localhost:3000
+```
+
+The API remains available at:
+
+```text
+http://localhost:8000/docs
+```
 
 ## API Overview
 
