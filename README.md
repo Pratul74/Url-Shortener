@@ -38,33 +38,34 @@ A production-oriented URL shortener with a FastAPI backend, a React frontend, JW
 
 ## Architecture
 
-![Project Architecture](docs/Architecture.png)
+![Project Architecture](backend/docs/Architecture.png)
 
 ## Project Structure
 
 ```text
 .
-|-- analytics/        # Click analytics worker, GeoIP, user-agent parsing, cache updates
-|-- api/              # FastAPI routers and route handlers
-|-- core/             # App settings, Redis client, security, exception handlers
-|-- data/             # Local data files such as GeoLite2-City.mmdb
-|-- db/               # Async database session and dependencies
-|-- dependencies/     # Request dependencies, including current-user auth
-|-- docs/             # Architecture diagram and documentation assets
-|-- exceptions/       # Domain exceptions
+|-- backend/          # FastAPI application, workers, migrations, and backend Dockerfile
+|   |-- analytics/    # Click analytics worker, GeoIP, user-agent parsing, cache updates
+|   |-- api/          # FastAPI routers and route handlers
+|   |-- core/         # App settings, Redis client, security, exception handlers
+|   |-- data/         # Local data files such as GeoLite2-City.mmdb
+|   |-- db/           # Async database session and dependencies
+|   |-- dependencies/ # Request dependencies, including current-user auth
+|   |-- docs/         # Architecture diagram and documentation assets
+|   |-- exceptions/   # Domain exceptions
+|   |-- mappers/      # Model-to-schema mapping helpers
+|   |-- messaging/    # RabbitMQ connection, topology, producer, consumer, event schemas
+|   |-- migrations/   # Alembic migration files
+|   |-- models/       # SQLAlchemy models
+|   |-- repositories/ # Database access layer
+|   |-- schemas/      # Pydantic request/response schemas
+|   |-- services/     # Business logic
+|   |-- utils/        # Utility helpers
+|   |-- Dockerfile
+|   |-- main.py       # FastAPI application entrypoint
+|   `-- alembic.ini   # Alembic configuration
 |-- frontend/         # React/Vite frontend application and Nginx image
-|-- mappers/          # Model-to-schema mapping helpers
-|-- messaging/        # RabbitMQ connection, topology, producer, consumer, event schemas
-|-- migrations/       # Alembic migration files
-|-- models/           # SQLAlchemy models
-|-- repositories/     # Database access layer
-|-- schemas/          # Pydantic request/response schemas
-|-- services/         # Business logic
-|-- utils/            # Utility helpers
 |-- docker-compose.yaml
-|-- Dockerfile
-|-- main.py           # FastAPI application entrypoint
-|-- alembic.ini       # Alembic configuration
 `-- requirements.txt  # Python dependencies
 ```
 
@@ -75,7 +76,7 @@ A production-oriented URL shortener with a FastAPI backend, a React frontend, JW
 - Redis
 - RabbitMQ
 - Node.js 22 or newer for local frontend development
-- GeoLite2 City database file at `data/GeoLite2-City.mmdb`
+- GeoLite2 City database file at `backend/data/GeoLite2-City.mmdb`
 
 Docker Compose can run the frontend, PostgreSQL, Redis, RabbitMQ, the API, and the analytics worker for you.
 
@@ -94,7 +95,7 @@ REDIS_HOST=localhost
 REDIS_PORT=6379
 REDIS_CACHE_TTL_SECONDS=86400
 
-GEOLITE2_PATH=data/GeoLite2-City.mmdb
+GEOLITE2_PATH=backend/data/GeoLite2-City.mmdb
 FRONTEND_ORIGINS=http://localhost:5173,http://localhost:3000
 
 RABBITMQ_HOST=localhost
@@ -106,7 +107,7 @@ RABBITMQ_QUEUE=url_clicks
 RABBITMQ_ROUTING_KEY=click
 ```
 
-When running with Docker Compose, the compose file supplies container network values for the services and mounts `./data/GeoLite2-City.mmdb` into the API and analytics worker containers.
+When running with Docker Compose, the compose file supplies container network values for the services and mounts `./backend/data/GeoLite2-City.mmdb` into the API, analytics worker, and flush worker containers.
 
 The frontend uses `frontend/.env` for local development:
 
@@ -138,13 +139,22 @@ alembic upgrade head
 Run the API:
 
 ```bash
+cd backend
 uvicorn main:app --reload
 ```
 
 Run the analytics worker in a separate terminal:
 
 ```bash
+cd backend
 python -m analytics.bootstrap
+```
+
+Run the analytics flush worker in another terminal:
+
+```bash
+cd backend
+python -m analytics.flush_worker
 ```
 
 The API is available at:
@@ -201,6 +211,7 @@ This starts:
 - `frontend`: React application served by Nginx on port `3000`
 - `url_shortener`: FastAPI application on port `8000`
 - `analytics_worker`: RabbitMQ consumer that processes click events
+- `flush_worker`: Periodically flushes cached analytics aggregates from Redis to PostgreSQL
 - `db`: PostgreSQL on port `5432`
 - `redis`: Redis on port `6379`
 - `rabbitmq`: RabbitMQ on port `5672` and management UI on port `15672`
@@ -343,4 +354,4 @@ Returns click analytics for a URL, including totals, yearly/monthly/daily click 
 - URL ownership is enforced for authenticated detail, soft delete, and permanent delete operations.
 - Expired or inactive URLs are rejected before redirect/detail responses.
 - Redis lookup caching falls back to PostgreSQL if Redis is unavailable.
-- Alembic migrations live in `migrations/versions`.
+- Alembic migrations live in `backend/migrations/versions`.
