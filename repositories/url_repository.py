@@ -23,7 +23,8 @@ class URLRepository(BaseRepository[Url]):
 
     async def get_all_by_user(self, user_id: uuid.UUID):
         result = await self.db.execute(select(Url).where(Url.user_id == user_id))
-        return result.scalars().all()
+        url = result.scalars().all()
+        return url
 
     def _cache_key(self, short_code: str) -> str:
         return f"url:{short_code}"
@@ -51,7 +52,7 @@ class URLRepository(BaseRepository[Url]):
     def _cache_payload(self, url: Url) -> dict[str, str | int | bool | None]:
         return {
             "id": int(url.id),
-            "original_url": url.original_url,
+            "original_url": str(url.original_url),
             "short_code": url.short_code,
             "clicks": str(url.clicks),
             "is_active": str(url.is_active),
@@ -96,7 +97,7 @@ class URLRepository(BaseRepository[Url]):
         if cached:
             logger.info("Cache hit: %s", key)
             try:
-                cached["id"] = uuid.UUID(cached["id"])
+                cached["id"] = int(cached["id"])
                 cached["clicks"] = int(cached["clicks"])
                 cached["is_active"] = cached["is_active"] == "True"
                 cached["created_at"] = (datetime.fromisoformat(cached["created_at"])
