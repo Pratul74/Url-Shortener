@@ -48,10 +48,8 @@ class IDGenerator:
     async def next_id(self) -> int:
         while True:
             new_id, wait = await self._try_next_id()
-            if wait is None:
+            if new_id is not None:
                 return new_id
-            asyncio.sleep(wait)
-            
-                
+            await asyncio.sleep(wait)
 
 
