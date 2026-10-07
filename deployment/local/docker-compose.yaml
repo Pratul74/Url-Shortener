@@ -1,7 +1,7 @@
 services:
   frontend:
     build:
-      context: ../../frontend
+      context: ./frontend
       args:
         VITE_API_URL: ${VITE_API_URL:-http://localhost:8000}
     container_name: url_shortener_frontend
@@ -15,7 +15,7 @@ services:
 
   url_shortener:
     build:
-      context: ../..
+      context: .
       dockerfile: backend/Dockerfile
     container_name: url_shortener
     restart: unless-stopped
@@ -35,11 +35,11 @@ services:
       RABBITMQ_PORT: 5672
       RABBITMQ_USER: ${RABBITMQ_USER:-admin}
       RABBITMQ_PASS: ${RABBITMQ_PASS:-password}
-      RABBITMQ_EXCHANGE: ${RABBITMQ_EXCHANGE:-clicks.events}
-      RABBITMQ_QUEUE: ${RABBITMQ_QUEUE:-analytics.click}
-      RABBITMQ_ROUTING_KEY: ${RABBITMQ_ROUTING_KEY:-analytics.click}
+      RABBITMQ_EXCHANGE: ${RABBITMQ_EXCHANGE:-url_clicks}
+      RABBITMQ_QUEUE: ${RABBITMQ_QUEUE:-url_clicks}
+      RABBITMQ_ROUTING_KEY: ${RABBITMQ_ROUTING_KEY:-click}
     volumes:
-      - ../../backend/data/GeoLite2-City.mmdb:/usr/share/GeoIP/GeoLite2-City.mmdb:ro
+      - ./backend/data/GeoLite2-City.mmdb:/usr/share/GeoIP/GeoLite2-City.mmdb:ro
     depends_on:
       db:
         condition: service_healthy
@@ -52,7 +52,7 @@ services:
 
   analytics_worker:
     build:
-      context: ../..
+      context: .
       dockerfile: backend/Dockerfile
     container_name: url_analytics_worker
     restart: unless-stopped
@@ -69,11 +69,11 @@ services:
       RABBITMQ_PORT: 5672
       RABBITMQ_USER: ${RABBITMQ_USER:-admin}
       RABBITMQ_PASS: ${RABBITMQ_PASS:-password}
-      RABBITMQ_EXCHANGE: ${RABBITMQ_EXCHANGE:-clicks.events}
-      RABBITMQ_QUEUE: ${RABBITMQ_QUEUE:-analytics.click}
-      RABBITMQ_ROUTING_KEY: ${RABBITMQ_ROUTING_KEY:-analytics.click}
+      RABBITMQ_EXCHANGE: ${RABBITMQ_EXCHANGE:-url_clicks}
+      RABBITMQ_QUEUE: ${RABBITMQ_QUEUE:-url_clicks}
+      RABBITMQ_ROUTING_KEY: ${RABBITMQ_ROUTING_KEY:-click}
     volumes:
-      - ../../backend/data/GeoLite2-City.mmdb:/usr/share/GeoIP/GeoLite2-City.mmdb:ro
+      - ./backend/data/GeoLite2-City.mmdb:/usr/share/GeoIP/GeoLite2-City.mmdb:ro
     depends_on:
       db:
         condition: service_healthy
@@ -86,7 +86,7 @@ services:
 
   flush_worker:
     build:
-      context: ../..
+      context: .
       dockerfile: backend/Dockerfile
     container_name: url_flush_worker
     restart: unless-stopped
@@ -103,11 +103,11 @@ services:
       RABBITMQ_PORT: 5672
       RABBITMQ_USER: ${RABBITMQ_USER:-admin}
       RABBITMQ_PASS: ${RABBITMQ_PASS:-password}
-      RABBITMQ_EXCHANGE: ${RABBITMQ_EXCHANGE:-clicks.events}
-      RABBITMQ_QUEUE: ${RABBITMQ_QUEUE:-analytics.click}
-      RABBITMQ_ROUTING_KEY: ${RABBITMQ_ROUTING_KEY:-analytics.click}
+      RABBITMQ_EXCHANGE: ${RABBITMQ_EXCHANGE:-url_clicks}
+      RABBITMQ_QUEUE: ${RABBITMQ_QUEUE:-url_clicks}
+      RABBITMQ_ROUTING_KEY: ${RABBITMQ_ROUTING_KEY:-click}
     volumes:
-      - ../../backend/data/GeoLite2-City.mmdb:/usr/share/GeoIP/GeoLite2-City.mmdb:ro
+      - ./backend/data/GeoLite2-City.mmdb:/usr/share/GeoIP/GeoLite2-City.mmdb:ro
     depends_on:
       db:
         condition: service_healthy
