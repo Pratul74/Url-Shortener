@@ -1,0 +1,42 @@
+services:
+
+  flush_worker:
+
+    image: pratul74/url-shortener-backend:latest
+
+    restart: unless-stopped
+
+    command:
+      - python
+      - -m
+      - analytics.flush_worker
+
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+
+      REDIS_HOST: ${REDIS_HOST}
+      REDIS_PORT: ${REDIS_PORT}
+      REDIS_CACHE_TTL_SECONDS: ${REDIS_CACHE_TTL_SECONDS:-86400}
+
+      RABBITMQ_HOST: ${RABBITMQ_HOST}
+      RABBITMQ_PORT: ${RABBITMQ_PORT}
+      RABBITMQ_USER: ${RABBITMQ_USER}
+      RABBITMQ_PASS: ${RABBITMQ_PASS}
+      RABBITMQ_EXCHANGE: ${RABBITMQ_EXCHANGE}
+      RABBITMQ_QUEUE: ${RABBITMQ_QUEUE}
+      RABBITMQ_ROUTING_KEY: ${RABBITMQ_ROUTING_KEY}
+
+      SECRET_KEY: ${SECRET_KEY}
+
+      BASE_URL: ${BASE_URL}
+
+      GEOLITE2_PATH: /usr/share/GeoIP/GeoLite2-City.mmdb
+
+    volumes:
+      - ../../backend/data/GeoLite2-City.mmdb:/usr/share/GeoIP/GeoLite2-City.mmdb:ro
+    networks:
+      - url_shortener_network
+
+networks:
+  url_shortener_network:
+    name: url_shortener_network
