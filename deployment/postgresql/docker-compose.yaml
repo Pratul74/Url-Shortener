@@ -1,0 +1,27 @@
+services:
+
+  postgres:
+
+    image: postgres:15
+
+    restart: always
+
+    ports:
+      - "5432:5432"
+
+    environment:
+      POSTGRES_DB: url_shortener_db
+      POSTGRES_USER: ${POSTGRES_USER:-admin}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password}
+
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - url_shortener_network
+
+networks:
+  url_shortener_network:
+    name: url_shortener_network
+
+volumes:
+  postgres_data:
