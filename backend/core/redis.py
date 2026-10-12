@@ -1,5 +1,7 @@
 from redis.asyncio import Redis
-from core import settings
+from core import get_redis_setting
+
+settings = get_redis_setting()
 
 redis_client = Redis.from_url(
     f"redis://{settings.REDIS_HOST}:{settings.REDIS_PORT}",
