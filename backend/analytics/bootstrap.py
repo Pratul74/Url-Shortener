@@ -1,7 +1,7 @@
 import asyncio
 
 from messaging.topology import RabbitMQTopology
-from core import settings
+from core import get_rabbitmq_setting
 from db.session import AsyncSessionLocal, close_db
 from .geoip import GeoIpService
 from core.redis import redis_client
@@ -38,8 +38,9 @@ async def main():
 
 
 if __name__ == "__main__":
-    print(f"Host: {settings.RABBITMQ_HOST!r}")
-    print(f"Port: {settings.RABBITMQ_PORT!r}")
-    print(f"User: {settings.RABBITMQ_USER!r}")
+    setting=get_rabbitmq_setting()
+    print(f"Host: {setting.RABBITMQ_HOST!r}")
+    print(f"Port: {setting.RABBITMQ_PORT!r}")
+    print(f"User: {setting.RABBITMQ_USER!r}")
     asyncio.run(main())
     
