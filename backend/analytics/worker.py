@@ -4,9 +4,7 @@ import asyncio
 from .cache import AnalyticsCache
 from .geoip import GeoIpService
 from .ua_parser import UserAgentService
-from repositories import AnalyticsRepository
 from schemas import CreateAnalytics
-from models import Analytics
 
 class AnalyticsWorker:
 
