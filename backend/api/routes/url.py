@@ -5,7 +5,7 @@ from services.url_service import UrlShortenerService
 from fastapi import APIRouter, BackgroundTasks, Request, status
 from mappers import UrlMapper
 from fastapi.responses import RedirectResponse
-from core.config import settings
+from core import get_api_setting
 from messaging import click_event_producer
 from messaging.events import ClickEvent
 from schemas.url import UrlCreate, UrlResponse, UrlInfo
@@ -15,6 +15,8 @@ router = APIRouter(
     prefix='/urls',
     tags=["Url Shortener"]
 )
+
+settings = get_api_setting()
 
 
 @router.post('', response_model=UrlResponse, status_code=status.HTTP_201_CREATED)
