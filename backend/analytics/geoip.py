@@ -1,36 +1,60 @@
-from geoip2.database import Reader
-from pathlib import Path
-from core import settings
-from threading import RLock
-import logging
 import asyncio
+import logging
+import time
+from pathlib import Path
+from threading import Lock
+
+from geoip2.database import Reader
+from geoip2.errors import AddressNotFoundError
+
+from core import get_geoip_setting
 
 logger = logging.getLogger(__name__)
 
+RELOAD_CHECK_INTERVAL = 60 
+
+
 class GeoIpService:
-    def __init__(self):
-        self.db_path=Path(settings.GEOLITE2_PATH)
+    def __init__(self, settings=None):
+        self.settings = settings or get_geoip_setting()
+        self.db_path = Path(self.settings.GEOLITE2_PATH)
         self.reader: Reader | None = None
         self.db_signature: tuple[int, int] | None = None
-        self._lock=RLock()
+        self._last_check = 0.0
+        self._lock = Lock()
 
     def _get_reader(self) -> Reader:
-        stat = self.db_path.stat()
+        now = time.monotonic()
+        if self.reader is not None and now - self._last_check < RELOAD_CHECK_INTERVAL:
+            return self.reader
+        self._last_check = now
+
+        try:
+            stat = self.db_path.stat()
+        except FileNotFoundError:
+            if self.reader is not None:
+                logger.warning("GeoLite2 DB missing, using existing reader")
+                return self.reader
+            raise
+
         signature = (stat.st_mtime_ns, stat.st_size)
         if self.reader is None or signature != self.db_signature:
             new_reader = Reader(str(self.db_path))
-            old_reader = self.reader
-            self.reader = new_reader
-            self.db_signature=signature
+            old_reader, self.reader = self.reader, new_reader
+            self.db_signature = signature
             if old_reader is not None:
                 old_reader.close()
-            logger.info("GeoLite2 database updated and refreshed")
+            logger.info("GeoLite2 database loaded/refreshed")
         return self.reader
 
     def _lookup_sync(self, ip_address: str) -> dict | None:
         with self._lock:
             reader = self._get_reader()
-            response = reader.city(ip_address)
+            try:
+                response = reader.city(ip_address)
+            except AddressNotFoundError:
+                logger.debug("No GeoIP record for %s", ip_address)
+                return None
 
             return {
                 "country": response.country.name,
@@ -43,15 +67,12 @@ class GeoIpService:
 
     async def lookup(self, ip_address: str) -> dict | None:
         try:
-            return await asyncio.to_thread(
-                self._lookup_sync,
-                ip_address,
-            )
+            return await asyncio.to_thread(self._lookup_sync, ip_address)
+        except ValueError:
+            logger.warning("Invalid IP address: %s", ip_address)
+            return None
         except Exception:
-            logger.exception(
-                "GeoIP lookup failed for %s",
-                ip_address,
-            )
+            logger.exception("GeoIP lookup failed for %s", ip_address)
             return None
 
     def _close_sync(self):
