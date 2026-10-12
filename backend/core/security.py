@@ -1,9 +1,11 @@
 from datetime import datetime, timedelta, timezone
 
-from .config import settings
+from .config import get_api_setting
 
 from jose import jwt
 from passlib.context import CryptContext
+
+settings = get_api_setting()
 
 pwd_context = CryptContext(
     schemes=["bcrypt"],
