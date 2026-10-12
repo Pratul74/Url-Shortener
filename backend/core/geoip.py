@@ -1,8 +1,9 @@
 from geoip2.database import Reader
-from core import settings
+from core import get_geoip_setting
 
 class GeoIpService:
-    def __init__(self):
+    def __init__(self, settings = None):
+        settings = settings or get_geoip_setting()
         self.reader = Reader(settings.GeoLite2_PATH)
 
     def lookup(self, ip_address) -> dict | None:
