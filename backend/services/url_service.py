@@ -1,6 +1,6 @@
 from datetime import datetime, timezone, timedelta
 
-from core import settings
+from core import get_api_setting
 import uuid
 from exceptions import AliasAlreadyExistsException, UrlNotFoundException, UrlInactiveException, UrlExpiredException
 from mappers import UrlMapper
@@ -10,10 +10,11 @@ from .base import BaseService
 
 class UrlShortenerService(BaseService):
 
-    def __init__(self, db):
+    def __init__(self, db, settings = None):
         super().__init__(db)
         self.repo=URLRepository(db)
         self.generator=IDGenerator(worker_id=1)
+        self.settings = settings or get_api_setting()
 
     @staticmethod
     def _is_expired(expires_at: datetime | None) -> bool:
@@ -76,7 +77,7 @@ class UrlShortenerService(BaseService):
         if self._is_expired(url.expires_at):
             raise UrlExpiredException()
         
-        return UrlMapper.to_details(url, settings.BASE_URL)
+        return UrlMapper.to_details(url, self.settings.BASE_URL)
 
     
     async def delete_url(self, user_id:int, short_code):
@@ -93,7 +94,7 @@ class UrlShortenerService(BaseService):
     async def list_url_by_user(self, user_id):
         urls = await self.repo.get_all_by_user(user_id)
 
-        return [UrlMapper.to_details(url, settings.BASE_URL) for url in urls]
+        return [UrlMapper.to_details(url, self.settings.BASE_URL) for url in urls]
 
     async def permanent_delete_url(self, user_id: uuid.UUID, short_code: str):
         url = await self.repo.get_by_short_code(short_code)
