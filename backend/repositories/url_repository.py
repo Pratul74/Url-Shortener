@@ -5,7 +5,7 @@ from redis.exceptions import RedisError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, update, delete
 
-from core.config import settings
+from core import get_redis_setting
 from core.redis import redis_client
 
 from models.url import Url
@@ -17,9 +17,10 @@ logger = logging.getLogger(__name__)
 
 
 class URLRepository(BaseRepository[Url]):
-    def __init__(self, db: AsyncSession):
+    def __init__(self, db: AsyncSession, settings = None):
         super().__init__(Url, db)
         self.redis_client = redis_client
+        self.settings = settings or get_redis_setting()
 
     async def get_all_by_user(self, user_id: uuid.UUID):
         result = await self.db.execute(select(Url).where(Url.user_id == user_id))
@@ -34,7 +35,7 @@ class URLRepository(BaseRepository[Url]):
         return value.isoformat() if value else None
 
     def _cache_ttl(self, url: Url) -> int:
-        ttl = settings.REDIS_CACHE_TTL_SECONDS
+        ttl = self.settings.REDIS_CACHE_TTL_SECONDS
 
         if url.expires_at is None:
             return ttl
