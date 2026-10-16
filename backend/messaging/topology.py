@@ -1,11 +1,12 @@
 from aio_pika import ExchangeType
-from core import settings
+from core import get_rabbitmq_setting
 from .channel import RabbitMQChannel
 
 class RabbitMQTopology:
 
     @staticmethod
     async def initialize():
+        settings = get_rabbitmq_setting()
         channel = await RabbitMQChannel.get_channel()
         
         exchange = await channel.declare_exchange(
