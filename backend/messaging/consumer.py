@@ -1,13 +1,14 @@
 from aio_pika import IncomingMessage
 import traceback
 from pydantic import ValidationError
-from core import settings
+from core import get_rabbitmq_setting
 from messaging.channel import RabbitMQChannel
 from messaging.events import ClickEvent as ClickEventSchema
 
 class ClickConsumer:
 
-    def __init__(self, worker):
+    def __init__(self, worker, settings = None):
+        self.settings = settings or get_rabbitmq_setting()
         self.worker=worker
 
     async def handle_message(self, message: IncomingMessage):
@@ -33,7 +34,7 @@ class ClickConsumer:
         channel = await RabbitMQChannel.get_channel()
 
         queue = await channel.declare_queue(
-            settings.RABBITMQ_QUEUE,
+            self.setting.RABBITMQ_QUEUE,
             durable=True,
         )
 
@@ -42,7 +43,3 @@ class ClickConsumer:
         await queue.consume(self.handle_message)
 
         print("Consumer registered")
-
-
-
-    
