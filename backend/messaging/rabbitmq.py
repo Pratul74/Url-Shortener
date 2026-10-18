@@ -16,6 +16,6 @@ class RabbitMQConnection:
                         host= settings.RABBITMQ_HOST,
                         port= settings.RABBITMQ_PORT,
                         login= settings.RABBITMQ_USER,
-                        password= settings.RABBITMQ_PASSs
+                        password= settings.RABBITMQ_PASS
                     )
         return cls._connection
