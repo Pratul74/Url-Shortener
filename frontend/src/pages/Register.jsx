@@ -12,6 +12,7 @@ export default function Register() {
     const { isAuthenticated } = useAuth();
     const [form, setForm] = useState({ username: "", email: "", password: "" });
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [showPassword, setShowPassword] = useState(false);
 
     if (isAuthenticated) return <Navigate to="/" replace />;
 
@@ -77,17 +78,28 @@ export default function Register() {
 
                     <label>
                         <span>Password</span>
-                        <input
-                            autoComplete="new-password"
-                            maxLength={100}
-                            minLength={8}
-                            name="password"
-                            onChange={(event) => setForm((value) => ({ ...value, password: event.target.value }))}
-                            placeholder="At least 8 characters"
-                            required
-                            type="password"
-                            value={form.password}
-                        />
+                        <div className="relative">
+                            <input
+                                autoComplete="current-password"
+                                className="w-full pr-11"
+                                minLength={8}
+                                name="password"
+                                onChange={(event) => setForm((value) => ({ ...value, password: event.target.value }))}
+                                placeholder="At least 8 characters"
+                                required
+                                type={showPassword ? "text" : "password"}
+                                value={form.password}
+                            />
+                            <button
+                                aria-label={showPassword ? "Hide password" : "Show password"}
+                                aria-pressed={showPassword}
+                                className="absolute right-2 top-1/2 -translate-y-1/2 cursor-pointer rounded p-1 text-lg leading-none"
+                                onClick={() => setShowPassword((value) => !value)}
+                                type="button"
+                            >
+                                {showPassword ? "👁️" : "🙈"}
+                            </button>
+                        </div>
                     </label>
 
                     <button className="primary-button" disabled={isSubmitting} type="submit">
