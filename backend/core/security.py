@@ -12,7 +12,7 @@ pwd_context = CryptContext(
     deprecated="auto",
 )
 
-SECRET_KEY = settings.SECRET_KEY
+SECRET_KEY = settings.SECRET_KEY.get_secret_value()
 ALGORITHM = settings.JWT_ALGORITHM
 
 ACCESS_TOKEN_EXPIRE_MINUTES = settings.ACCESS_TOKEN_EXPIRE_MINUTES
@@ -52,6 +52,6 @@ def create_access_token(
 def decode_access_token(token: str) -> dict:
     return jwt.decode(
         token=token,
-        key=settings.SECRET_KEY,
+        key=SECRET_KEY,
         algorithms=[settings.JWT_ALGORITHM],
     )
