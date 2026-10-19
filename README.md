@@ -351,7 +351,7 @@ Content-Type: application/json
 ### Redirect to Original URL
 
 ```http
-GET /urls/{short_code}
+GET /{short_code}
 ```
 
 Redirects to the original URL with `307 Temporary Redirect`, increments the URL click count, and publishes a click event for analytics processing.
