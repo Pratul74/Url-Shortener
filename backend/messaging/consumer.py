@@ -34,7 +34,7 @@ class ClickConsumer:
         channel = await RabbitMQChannel.get_channel()
 
         queue = await channel.declare_queue(
-            self.setting.RABBITMQ_QUEUE,
+            self.settings.RABBITMQ_QUEUE,
             durable=True,
         )
 
