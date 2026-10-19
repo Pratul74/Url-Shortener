@@ -32,31 +32,6 @@ async def get_all_url_by_user(db:db_dependency, current_user:CurrentUser):
     service=UrlShortenerService(db)
     return await service.list_url_by_user(current_user.id)
 
-
-@router.get('/{short_code}')
-async def get_original_url(
-    short_code: str,
-    db: db_dependency,
-    request: Request,
-    background_tasks: BackgroundTasks,
-):
-    service = UrlShortenerService(db)
-
-    url = await service.get_original_url(short_code)
-    background_tasks.add_task(
-        publish_click_event,
-        ClickEvent(
-        url_id=int(url.id),
-        short_code=url.short_code,
-        ip=request.client.host if request.client else "",
-        user_agent=request.headers.get("user-agent", ""),
-        referrer=request.headers.get("referer"),
-        timestamp=datetime.now(timezone.utc),
-        ),
-    )
-
-    return RedirectResponse(url=url.original_url, status_code=status.HTTP_307_TEMPORARY_REDIRECT)
-
 @router.get('/detail/{short_code}', response_model=UrlInfo)
 async def get_url_detail(short_code:str, db:db_dependency, current_user:CurrentUser):
     service = UrlShortenerService(db)
@@ -74,12 +49,4 @@ async def permanent_delete_url(db: db_dependency, short_code: str, current_user:
     service = UrlShortenerService(db)
 
     await service.permanent_delete_url(user_id=current_user.id, short_code=short_code)
-
-
-async def publish_click_event(click_event: ClickEvent):
-    try:
-        await click_event_producer.publish(click_event)
-    except Exception as exc:
-        print(f"Failed to publish click event: {exc}")
-
 
