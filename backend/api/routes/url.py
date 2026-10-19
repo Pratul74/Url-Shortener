@@ -12,8 +12,8 @@ from schemas.url import UrlCreate, UrlResponse, UrlInfo
 from dependencies import CurrentUser
 
 router = APIRouter(
-    prefix='/urls',
-    tags=["Url Shortener"]
+    prefix='/',
+    tags=["Snipp the Url Shortener"]
 )
 
 settings = get_api_setting()
@@ -32,7 +32,7 @@ async def get_all_url_by_user(db:db_dependency, current_user:CurrentUser):
     service=UrlShortenerService(db)
     return await service.list_url_by_user(current_user.id)
 
-#This route will use redis
+
 @router.get('/{short_code}')
 async def get_original_url(
     short_code: str,
@@ -43,20 +43,17 @@ async def get_original_url(
     service = UrlShortenerService(db)
 
     url = await service.get_original_url(short_code)
-    print("Before background task")
-
-    event = ClickEvent(
+    background_tasks.add_task(
+        publish_click_event,
+        ClickEvent(
         url_id=int(url.id),
         short_code=url.short_code,
         ip=request.client.host if request.client else "",
         user_agent=request.headers.get("user-agent", ""),
         referrer=request.headers.get("referer"),
         timestamp=datetime.now(timezone.utc),
+        ),
     )
-
-    await publish_click_event(event)
-
-    print("After publish")
 
     return RedirectResponse(url=url.original_url, status_code=status.HTTP_307_TEMPORARY_REDIRECT)
 
