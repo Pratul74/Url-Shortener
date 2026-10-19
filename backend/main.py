@@ -29,3 +29,7 @@ app.include_router(api_router)
 @app.get('/')
 def root():
     return {"message": "Url Shortener API"}
+
+@app.get("/health")
+def health():
+    return {"status": "healthy"}
