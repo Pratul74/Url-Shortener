@@ -43,17 +43,20 @@ async def get_original_url(
     service = UrlShortenerService(db)
 
     url = await service.get_original_url(short_code)
-    background_tasks.add_task(
-        publish_click_event,
-        ClickEvent(
-            url_id=int(url.id),
-            short_code=url.short_code,
-            ip=request.client.host if request.client else "",
-            user_agent=request.headers.get("user-agent", ""),
-            referrer=request.headers.get("referer"),
-            timestamp=datetime.now(timezone.utc),
-        ),
+    print("Before background task")
+
+    event = ClickEvent(
+        url_id=int(url.id),
+        short_code=url.short_code,
+        ip=request.client.host if request.client else "",
+        user_agent=request.headers.get("user-agent", ""),
+        referrer=request.headers.get("referer"),
+        timestamp=datetime.now(timezone.utc),
     )
+
+    await publish_click_event(event)
+
+    print("After publish")
 
     return RedirectResponse(url=url.original_url, status_code=status.HTTP_307_TEMPORARY_REDIRECT)
 
