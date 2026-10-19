@@ -24,8 +24,6 @@ app.add_middleware(
 
 register_exception_handlers(app)
 
-app.include_router(api_router)
-
 @app.get('/')
 def root():
     return {"message": "Url Shortener API"}
@@ -33,3 +31,5 @@ def root():
 @app.get("/health")
 def health():
     return {"status": "healthy"}
+
+app.include_router(api_router)
