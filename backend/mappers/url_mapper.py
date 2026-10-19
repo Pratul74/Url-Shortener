@@ -9,7 +9,7 @@ class UrlMapper:
                             id=str(url.id), 
                             original_url=str(url.original_url), 
                             short_code=url.short_code, 
-                            short_url=f"{base_url}/urls/{url.short_code}",
+                            short_url=f"{base_url}/{url.short_code}",
                             clicks=url.clicks,
                             created_at=url.created_at,
                             expires_at=url.expires_at
@@ -21,7 +21,7 @@ class UrlMapper:
             id=str(url.id),
             original_url=str(url.original_url),
             short_code=url.short_code,
-            short_url=f"{base_url}/urls/{url.short_code}",
+            short_url=f"{base_url}/{url.short_code}",
             clicks=url.clicks,
             is_active=url.is_active,
             created_at=url.created_at,
