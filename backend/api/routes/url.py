@@ -12,7 +12,7 @@ from schemas.url import UrlCreate, UrlResponse, UrlInfo
 from dependencies import CurrentUser
 
 router = APIRouter(
-    prefix='/',
+    prefix='/urls',
     tags=["Snipp the Url Shortener"]
 )
 
