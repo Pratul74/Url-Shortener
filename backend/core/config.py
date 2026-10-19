@@ -23,7 +23,7 @@ class RabbitMqSetting(_Base):
     RABBITMQ_HOST: str
     RABBITMQ_PORT: int = Field(ge=1, le=65535)
     RABBITMQ_USER: str
-    RABBITMQ_PASS: SecretStr
+    RABBITMQ_PASS: str
     RABBITMQ_EXCHANGE: str
     RABBITMQ_QUEUE: str
     RABBITMQ_ROUTING_KEY: str
