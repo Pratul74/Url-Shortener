@@ -1,8 +1,8 @@
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from models import Analytics
-from .base import BaseRepository
+from backend.models import Analytics
+from backend.repositories.base import BaseRepository
 
 
 class AnalyticsRepository(BaseRepository[Analytics]):
