@@ -7,9 +7,9 @@ from sqlalchemy.ext.asyncio import async_engine_from_config
 
 from alembic import context
 
-from db.database import Base
-from models import Analytics, Url, User  # noqa: F401  (imported so models register on Base.metadata)
-from core import get_database_setting
+from backend.db.database import Base
+from backend.models import Analytics, Url, User  # noqa: F401  (imported so models register on Base.metadata)
+from backend.core import get_database_setting
 
 settings = get_database_setting()
 
