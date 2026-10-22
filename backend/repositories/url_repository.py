@@ -5,12 +5,12 @@ from redis.exceptions import RedisError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, update, delete
 
-from core import get_redis_setting
-from core.redis import redis_client
+from backend.core import get_redis_setting
+from backend.core.redis import redis_client
 
-from models.url import Url
-from models.analytics import Analytics
-from repositories.base import BaseRepository
+from backend.models.url import Url
+from backend.models.analytics import Analytics
+from backend.repositories.base import BaseRepository
 import logging
 
 logger = logging.getLogger(__name__)
