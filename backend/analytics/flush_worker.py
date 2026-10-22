@@ -1,15 +1,14 @@
 import asyncio
 import logging
 import time
-import uuid
 
 from redis.exceptions import ResponseError
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
-from analytics.parsing import DICT_METRICS, merge_counts, parse_hash
-from core.redis import redis_client
-from db.session import AsyncSessionLocal
-from repositories import AnalyticsRepository
+from backend.analytics.parsing import DICT_METRICS, merge_counts, parse_hash
+from backend.core.redis import redis_client
+from backend.db.session import AsyncSessionLocal
+from backend.repositories import AnalyticsRepository
 
 logger = logging.getLogger(__name__)
 
