@@ -1,5 +1,5 @@
-from models import User
-from schemas import UserResponse
+from backend.models import User
+from backend.schemas import UserResponse
 
 
 class UserMapper:
