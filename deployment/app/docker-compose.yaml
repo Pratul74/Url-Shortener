@@ -42,7 +42,7 @@ services:
 
     command:
       - uvicorn
-      - main:app
+      - backend.main:app
       - --host=0.0.0.0
       - --port=8000
 
@@ -75,7 +75,7 @@ services:
     command:
       - python
       - -m
-      - analytics.bootstrap
+      - backend.analytics.bootstrap
 
     env_file:
       - .env
