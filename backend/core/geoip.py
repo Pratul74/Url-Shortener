@@ -1,5 +1,5 @@
 from geoip2.database import Reader
-from core import get_geoip_setting
+from backend.core import get_geoip_setting
 
 class GeoIpService:
     def __init__(self, settings = None):
