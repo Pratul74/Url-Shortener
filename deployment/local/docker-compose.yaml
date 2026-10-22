@@ -21,7 +21,7 @@ services:
     restart: unless-stopped
     ports:
       - "8000:8000"
-    command: ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+    command: ["uvicorn", "backend.main:app", "--host", "0.0.0.0", "--port", "8000"]
     environment:
       DATABASE_URL: postgresql://postgres:${POSTGRES_PASSWORD:-password}@db:5432/url_shortener_db
       BASE_URL: http://localhost:8000
@@ -56,7 +56,7 @@ services:
       dockerfile: ../../backend/Dockerfile
     container_name: url_analytics_worker
     restart: unless-stopped
-    command: ["python", "-m", "analytics.bootstrap"]
+    command: ["python", "-m", "backend.analytics.bootstrap"]
     environment:
       DATABASE_URL: postgresql://postgres:${POSTGRES_PASSWORD:-password}@db:5432/url_shortener_db
       BASE_URL: http://localhost:8000
@@ -90,7 +90,7 @@ services:
       dockerfile: ../../backend/Dockerfile
     container_name: url_flush_worker
     restart: unless-stopped
-    command: ["python", "-m", "analytics.flush_worker"]
+    command: ["python", "-m", "backend.analytics.flush_worker"]
     environment:
       DATABASE_URL: postgresql://postgres:${POSTGRES_PASSWORD:-password}@db:5432/url_shortener_db
       BASE_URL: http://localhost:8000
