@@ -1,12 +1,22 @@
 from functools import lru_cache
 from typing import Literal
+from pathlib import Path
+import os
 
 from pydantic import Field, SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+ENV_FILE = Path(os.getenv("ENV_FILE", PROJECT_ROOT / "deployment" / "local" / ".env"))
+
+
 class _Base(BaseSettings):
-    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
+    model_config = SettingsConfigDict(
+        env_file=ENV_FILE if ENV_FILE.exists() else None,
+        env_file_encoding="utf-8",
+        extra="ignore",
+    )
 
 
 class DatabaseSetting(_Base):
