@@ -1,5 +1,5 @@
-from db.database import Base
-from models import Url
+from backend.db.database import Base
+from backend.models import Url
 import datetime
 from sqlalchemy import ForeignKey, DateTime, BigInteger
 from sqlalchemy.orm import mapped_column, Mapped, relationship
