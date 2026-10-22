@@ -7,7 +7,7 @@ from threading import Lock
 from geoip2.database import Reader
 from geoip2.errors import AddressNotFoundError
 
-from core import get_geoip_setting
+from backend.core import get_geoip_setting
 
 logger = logging.getLogger(__name__)
 
@@ -48,6 +48,7 @@ class GeoIpService:
         return self.reader
 
     def _lookup_sync(self, ip_address: str) -> dict | None:
+        print(ip_address)
         with self._lock:
             reader = self._get_reader()
             try:
