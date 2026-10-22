@@ -1,13 +1,13 @@
 import logging
 import uuid
 
-from analytics.parsing import DICT_METRICS, merge_counts, parse_hash
-from core.redis import redis_client
-from exceptions import UrlNotFoundException
-from repositories import AnalyticsRepository
-from repositories import URLRepository
+from backend.analytics.parsing import DICT_METRICS, merge_counts, parse_hash
+from backend.core.redis import redis_client
+from backend.exceptions import UrlNotFoundException
+from backend.repositories import AnalyticsRepository
+from backend.repositories import URLRepository
 from sqlalchemy.ext.asyncio import AsyncSession
-from .base import BaseService
+from backend.services.base import BaseService
 
 logger = logging.getLogger(__name__)
 
