@@ -1,5 +1,5 @@
 from aio_pika import Channel
-from .rabbitmq import RabbitMQConnection
+from backend.messaging.rabbitmq import RabbitMQConnection
 
 class RabbitMQChannel:
 
