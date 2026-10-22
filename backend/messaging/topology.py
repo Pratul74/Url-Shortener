@@ -1,6 +1,6 @@
 from aio_pika import ExchangeType
-from core import get_rabbitmq_setting
-from .channel import RabbitMQChannel
+from backend.core import get_rabbitmq_setting
+from backend.messaging.channel import RabbitMQChannel
 
 class RabbitMQTopology:
 
