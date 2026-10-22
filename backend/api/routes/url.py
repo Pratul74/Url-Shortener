@@ -1,15 +1,10 @@
-from datetime import datetime, timezone
-
-from db.dependencies import db_dependency
-from services.url_service import UrlShortenerService
-from fastapi import APIRouter, BackgroundTasks, Request, status
-from mappers import UrlMapper
-from fastapi.responses import RedirectResponse
-from core import get_api_setting
-from messaging import click_event_producer
-from messaging.events import ClickEvent
-from schemas.url import UrlCreate, UrlResponse, UrlInfo
-from dependencies import CurrentUser
+from backend.db.dependencies import db_dependency
+from backend.services.url_service import UrlShortenerService
+from fastapi import APIRouter, status
+from backend.mappers import UrlMapper
+from backend.core import get_api_setting
+from backend.schemas.url import UrlCreate, UrlResponse, UrlInfo
+from backend.dependencies import CurrentUser
 
 router = APIRouter(
     prefix='/urls',
