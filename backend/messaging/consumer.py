@@ -1,9 +1,9 @@
 from aio_pika import IncomingMessage
 import traceback
 from pydantic import ValidationError
-from core import get_rabbitmq_setting
-from messaging.channel import RabbitMQChannel
-from messaging.events import ClickEvent as ClickEventSchema
+from backend.core import get_rabbitmq_setting
+from backend.messaging.channel import RabbitMQChannel
+from backend.messaging.events import ClickEvent as ClickEventSchema
 
 class ClickConsumer:
 
