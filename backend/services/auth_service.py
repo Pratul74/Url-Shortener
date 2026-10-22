@@ -1,10 +1,10 @@
-from .base import BaseService
+from backend.services.base import BaseService
 from sqlalchemy.ext.asyncio import AsyncSession
-from mappers import UserMapper
-from schemas import UserCreate, UserResponse, TokenResponse
-from core.security import hash_password, create_access_token, verify_password
-from exceptions import UserAlreadyExistsException, InvalidCredentialsException
-from repositories import UserRepository
+from backend.mappers import UserMapper
+from backend.schemas import UserCreate, UserResponse, TokenResponse
+from backend.core.security import hash_password, create_access_token, verify_password
+from backend.exceptions import UserAlreadyExistsException, InvalidCredentialsException
+from backend.repositories import UserRepository
 
 class AuthService(BaseService):
     def __init__(self, db: AsyncSession):
