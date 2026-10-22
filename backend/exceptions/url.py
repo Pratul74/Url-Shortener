@@ -1,4 +1,4 @@
-from .base import AppException
+from backend.exceptions.base import AppException
 
 class UrlNotFoundException(AppException):
     def __init__(self):
