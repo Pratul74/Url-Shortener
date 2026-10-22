@@ -1,5 +1,5 @@
 from redis.asyncio import Redis
-from core import get_redis_setting
+from backend.core import get_redis_setting
 
 settings = get_redis_setting()
 
