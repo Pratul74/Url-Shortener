@@ -1,5 +1,5 @@
-from models import Url
-from schemas import UrlResponse, UrlInfo
+from backend.models import Url
+from backend.schemas import UrlResponse, UrlInfo
 
 class UrlMapper:
 
