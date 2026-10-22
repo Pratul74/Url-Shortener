@@ -1,8 +1,8 @@
 from fastapi import APIRouter
-from db import db_dependency
-from dependencies import CurrentUser
-from services import AnalyticsService
-from schemas import AnalyticsOut
+from backend.db import db_dependency
+from backend.dependencies import CurrentUser
+from backend.services import AnalyticsService
+from backend.schemas import AnalyticsOut
 
 router = APIRouter(
     prefix="/analytics",
