@@ -1,6 +1,6 @@
 from sqlalchemy.ext.asyncio import create_async_engine
 from sqlalchemy.orm import declarative_base
-from core import get_database_setting
+from backend.core import get_database_setting
 
 def get_async_database_url(url: str) -> str:
     if url.startswith("postgresql://"):
