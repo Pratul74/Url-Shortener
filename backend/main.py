@@ -1,8 +1,8 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from api import api_router
-from core.config import get_frontend_setting
-from core.exception_handlers import register_exception_handlers
+from backend.api import api_router
+from backend.core.config import get_frontend_setting
+from backend.core.exception_handlers import register_exception_handlers
 
 app = FastAPI(title="Url Shortener API")
 
