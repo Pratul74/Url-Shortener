@@ -1,10 +1,10 @@
-from messaging.events import ClickEvent as ClickEventSchema
+from backend.messaging.events import ClickEvent as ClickEventSchema
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 import asyncio
-from .cache import AnalyticsCache
-from .geoip import GeoIpService
-from .ua_parser import UserAgentService
-from schemas import CreateAnalytics
+from backend.analytics.cache import AnalyticsCache
+from backend.analytics.geoip import GeoIpService
+from backend.analytics.ua_parser import UserAgentService
+from backend.schemas import CreateAnalytics
 
 class AnalyticsWorker:
 
