@@ -1,7 +1,7 @@
-from .base import BaseRepository
+from backend.repositories.base import BaseRepository
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from models import User
+from backend.models import User
 
 class UserRepository(BaseRepository[User]):
     def __init__(self, db: AsyncSession):
