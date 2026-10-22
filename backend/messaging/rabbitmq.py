@@ -1,5 +1,5 @@
 from aio_pika import connect_robust, RobustConnection
-from core import get_rabbitmq_setting
+from backend.core import get_rabbitmq_setting
 import asyncio
 
 class RabbitMQConnection:
