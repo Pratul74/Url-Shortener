@@ -1,12 +1,12 @@
 from datetime import datetime, timezone, timedelta
 
-from core import get_api_setting
+from backend.core import get_api_setting
 import uuid
-from exceptions import AliasAlreadyExistsException, UrlNotFoundException, UrlInactiveException, UrlExpiredException
-from mappers import UrlMapper
-from repositories.url_repository import URLRepository
-from utils import encode, IDGenerator
-from .base import BaseService
+from backend.exceptions import AliasAlreadyExistsException, UrlNotFoundException, UrlInactiveException, UrlExpiredException
+from backend.mappers import UrlMapper
+from backend.repositories.url_repository import URLRepository
+from backend.utils import encode, IDGenerator
+from backend.services.base import BaseService
 
 class UrlShortenerService(BaseService):
 
