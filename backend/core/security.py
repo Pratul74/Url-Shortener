@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta, timezone
 
-from .config import get_api_setting
+from backend.core.config import get_api_setting
 
 from jose import jwt
 from passlib.context import CryptContext
