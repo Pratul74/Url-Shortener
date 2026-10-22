@@ -1,7 +1,7 @@
-from core import get_rabbitmq_setting
+from backend.core import get_rabbitmq_setting
 from aio_pika import Message, DeliveryMode
-from .channel import RabbitMQChannel
-from .events import ClickEvent as ClickEventSchema
+from backend.messaging.channel import RabbitMQChannel
+from backend.messaging.events import ClickEvent as ClickEventSchema
 
 class ClickEventProducer:
     def __init__(self, settings=None):
