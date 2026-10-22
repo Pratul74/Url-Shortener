@@ -1,7 +1,5 @@
-import asyncio
-import uuid
-from core.redis import redis_client as default_redis_client
-from schemas import CreateAnalytics
+from backend.core.redis import redis_client as default_redis_client
+from backend.schemas import CreateAnalytics
 
 class AnalyticsCache:
 
