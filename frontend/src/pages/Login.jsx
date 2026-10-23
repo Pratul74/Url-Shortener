@@ -14,7 +14,7 @@ export default function Login() {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
 
-    if (isAuthenticated) return <Navigate to="/" replace />;
+    if (isAuthenticated) return <Navigate to="/dashboard" replace />;
 
     async function handleSubmit(event) {
         event.preventDefault();
@@ -24,7 +24,7 @@ export default function Login() {
             const data = await loginRequest(form.email, form.password);
             login(data.access_token);
             toast.success("Welcome back");
-            navigate("/", { replace: true });
+            navigate("/dashboard", { replace: true });
         } catch (error) {
             toast.error(getApiErrorMessage(error, "Unable to sign in"));
         } finally {
@@ -37,7 +37,7 @@ export default function Login() {
             <section className="auth-panel">
                 <div className="brand-mark">
                     <Link2 size={22} />
-                    <span>Url Shortener</span>
+                    <span>Snipp the url shortener</span>
                 </div>
 
                 <div>
