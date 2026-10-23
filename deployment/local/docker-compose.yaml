@@ -1,3 +1,7 @@
+x-backend-build: &backend-build
+  context: ../..
+  dockerfile: backend/Dockerfile
+
 services:
   frontend:
     build:
@@ -14,16 +18,14 @@ services:
       - url_shortener_network
 
   url_shortener:
-    build:
-      context: .
-      dockerfile: ../../backend/Dockerfile
+    build: *backend-build
     container_name: url_shortener
     restart: unless-stopped
     ports:
       - "8000:8000"
     command: ["uvicorn", "backend.main:app", "--host", "0.0.0.0", "--port", "8000"]
     environment:
-      DATABASE_URL: postgresql://postgres:${POSTGRES_PASSWORD:-password}@db:5432/url_shortener_db
+      DATABASE_URL: postgresql+asyncpg://postgres:${POSTGRES_PASSWORD:-password}@db:5432/url_shortener_db
       BASE_URL: http://localhost:8000
       SECRET_KEY: ${SECRET_KEY}
       FRONTEND_ORIGINS: ${FRONTEND_ORIGINS:-http://localhost:3000,http://localhost:5173}
@@ -38,27 +40,31 @@ services:
       RABBITMQ_EXCHANGE: ${RABBITMQ_EXCHANGE:-url_clicks}
       RABBITMQ_QUEUE: ${RABBITMQ_QUEUE:-url_clicks}
       RABBITMQ_ROUTING_KEY: ${RABBITMQ_ROUTING_KEY:-click}
-    volumes:
-      - ../../backend/data/GeoLite2-City.mmdb:/usr/share/GeoIP/GeoLite2-City.mmdb:ro
     depends_on:
       db:
         condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
       redis:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
     networks:
       - url_shortener_network
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
 
   analytics_worker:
-    build:
-      context: .
-      dockerfile: ../../backend/Dockerfile
+    build: *backend-build
     container_name: url_analytics_worker
     restart: unless-stopped
     command: ["python", "-m", "backend.analytics.bootstrap"]
     environment:
-      DATABASE_URL: postgresql://postgres:${POSTGRES_PASSWORD:-password}@db:5432/url_shortener_db
+      DATABASE_URL: postgresql+asyncpg://postgres:${POSTGRES_PASSWORD:-password}@db:5432/url_shortener_db
       BASE_URL: http://localhost:8000
       SECRET_KEY: ${SECRET_KEY}
       GEOLITE2_PATH: /usr/share/GeoIP/GeoLite2-City.mmdb
@@ -72,11 +78,11 @@ services:
       RABBITMQ_EXCHANGE: ${RABBITMQ_EXCHANGE:-url_clicks}
       RABBITMQ_QUEUE: ${RABBITMQ_QUEUE:-url_clicks}
       RABBITMQ_ROUTING_KEY: ${RABBITMQ_ROUTING_KEY:-click}
-    volumes:
-      - ../../backend/data/GeoLite2-City.mmdb:/usr/share/GeoIP/GeoLite2-City.mmdb:ro
     depends_on:
       db:
         condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
       redis:
         condition: service_healthy
       rabbitmq:
@@ -85,14 +91,12 @@ services:
       - url_shortener_network
 
   flush_worker:
-    build:
-      context: .
-      dockerfile: ../../backend/Dockerfile
+    build: *backend-build
     container_name: url_flush_worker
     restart: unless-stopped
     command: ["python", "-m", "backend.analytics.flush_worker"]
     environment:
-      DATABASE_URL: postgresql://postgres:${POSTGRES_PASSWORD:-password}@db:5432/url_shortener_db
+      DATABASE_URL: postgresql+asyncpg://postgres:${POSTGRES_PASSWORD:-password}@db:5432/url_shortener_db
       BASE_URL: http://localhost:8000
       SECRET_KEY: ${SECRET_KEY}
       GEOLITE2_PATH: /usr/share/GeoIP/GeoLite2-City.mmdb
@@ -106,12 +110,24 @@ services:
       RABBITMQ_EXCHANGE: ${RABBITMQ_EXCHANGE:-url_clicks}
       RABBITMQ_QUEUE: ${RABBITMQ_QUEUE:-url_clicks}
       RABBITMQ_ROUTING_KEY: ${RABBITMQ_ROUTING_KEY:-click}
-    volumes:
-      - ../../backend/data/GeoLite2-City.mmdb:/usr/share/GeoIP/GeoLite2-City.mmdb:ro
     depends_on:
       db:
         condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
       redis:
+        condition: service_healthy
+    networks:
+      - url_shortener_network
+
+  migrate:
+    build: *backend-build
+    container_name: url_shortener_migrate
+    command: ["alembic", "-c", "backend/alembic.ini", "upgrade", "head"]
+    environment:
+      DATABASE_URL: postgresql+asyncpg://postgres:${POSTGRES_PASSWORD:-password}@db:5432/url_shortener_db
+    depends_on:
+      db:
         condition: service_healthy
     networks:
       - url_shortener_network
