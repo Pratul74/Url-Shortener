@@ -14,7 +14,7 @@ export default function Register() {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
 
-    if (isAuthenticated) return <Navigate to="/" replace />;
+    if (isAuthenticated) return <Navigate to="/dashboard" replace />;
 
     async function handleSubmit(event) {
         event.preventDefault();
@@ -36,7 +36,7 @@ export default function Register() {
             <section className="auth-panel">
                 <div className="brand-mark">
                     <Link2 size={22} />
-                    <span>Url Shortener</span>
+                    <span>Snipp the url shortener</span>
                 </div>
 
                 <div>
