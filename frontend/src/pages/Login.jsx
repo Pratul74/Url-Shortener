@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { Link, Navigate, useNavigate } from "react-router-dom";
-import { Link2, Loader2 } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { login as loginRequest } from "../api/auth";
@@ -9,12 +9,10 @@ import { useAuth } from "../context/AuthContext";
 
 export default function Login() {
     const navigate = useNavigate();
-    const { isAuthenticated, login } = useAuth();
+    const { login } = useAuth();
     const [form, setForm] = useState({ email: "", password: "" });
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
-
-    if (isAuthenticated) return <Navigate to="/dashboard" replace />;
 
     async function handleSubmit(event) {
         event.preventDefault();
@@ -35,10 +33,7 @@ export default function Login() {
     return (
         <main className="auth-shell">
             <section className="auth-panel">
-                <div className="brand-mark">
-                    <Link2 size={22} />
-                    <span>Snipp the url shortener</span>
-                </div>
+                <Link className="brand-mark" to="/"><img className="brand-image" src="/snipp-logo.png" alt="" /><span>Snipp<span className="brand-period">.</span></span></Link>
 
                 <div>
                     <p className="eyebrow">Workspace sign in</p>
