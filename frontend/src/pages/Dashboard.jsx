@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { BarChart3, Copy, ExternalLink, Loader2, LogOut, Plus, RefreshCw, Trash2 } from "lucide-react";
+import { ArrowLeft, BarChart3, Copy, ExternalLink, Loader2, LogOut, Plus, RefreshCw, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { createShortUrl, deleteUrl, listUrls, permanentlyDeleteUrl } from "../api/url";
@@ -119,10 +119,16 @@ export default function Dashboard() {
                     <p className="eyebrow">Production dashboard</p>
                     <h1>Short links</h1>
                 </div>
-                <button className="ghost-button" onClick={handleLogout} type="button">
-                    <LogOut size={16} />
-                    Sign out
-                </button>
+                <div className="dashboard-header-actions">
+                    <Link className="ghost-button" to="/">
+                        <ArrowLeft size={16} />
+                        Home
+                    </Link>
+                    <button className="ghost-button" onClick={handleLogout} type="button">
+                        <LogOut size={16} />
+                        Sign out
+                    </button>
+                </div>
             </header>
 
             <section className="metric-grid">
