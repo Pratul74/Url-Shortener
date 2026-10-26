@@ -60,7 +60,7 @@ export default function Analytics() {
                     <p className="eyebrow">Analytics</p>
                     <h1>Link #{urlId}</h1>
                 </div>
-                <Link className="ghost-button" to="/">
+                <Link className="ghost-button" to="/dashboard">
                     <ArrowLeft size={16} />
                     Dashboard
                 </Link>
