@@ -35,8 +35,11 @@ class RabbitMqSetting(_Base):
     RABBITMQ_USER: str
     RABBITMQ_PASS: str
     RABBITMQ_EXCHANGE: str
-    RABBITMQ_QUEUE: str
-    RABBITMQ_ROUTING_KEY: str
+    ANALYTICS_QUEUE: str
+    ANALYTICS_ROUTING_KEY: str
+
+    QR_QUEUE:str
+    QR_ROUTING_KEY:str
 
 
 class APISetting(_Base):
@@ -56,6 +59,12 @@ class FrontendSetting(_Base):
     @property
     def origins(self) -> list[str]:
         return [o.strip() for o in self.FRONTEND_ORIGINS.split(",") if o.strip()]
+
+class AwsSetting(_Base):
+    AWS_REGION: str
+    S3_BUCKET: str
+    ACCESS_KEY: str
+    SECRET_ACCESS_KEY: str
 
 
 @lru_cache
@@ -81,3 +90,7 @@ def get_api_setting() -> APISetting:
 @lru_cache
 def get_frontend_setting() -> FrontendSetting:
     return FrontendSetting()
+
+@lru_cache
+def get_aws_setting() -> AwsSetting:
+    return AwsSetting()
