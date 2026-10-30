@@ -16,13 +16,13 @@ class RabbitMQTopology:
         )
 
         queue = await channel.declare_queue(
-            settings.RABBITMQ_QUEUE,
+            settings.ANALYTICS_QUEUE,
             durable=True,
         )
 
         await queue.bind(
             exchange, 
-            routing_key=settings.RABBITMQ_ROUTING_KEY,
+            routing_key=settings.ANALYTICS_ROUTING_KEY,
         )
 
         return exchange, queue
