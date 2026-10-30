@@ -25,6 +25,8 @@ class Url(Base):
         nullable=False,
     )
 
+    qr_key: Mapped[str | None] = mapped_column(String(255), nullable=True, unique=True)
+
     user = relationship(
         "User",
         back_populates="urls",
