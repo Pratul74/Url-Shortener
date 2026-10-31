@@ -6,10 +6,10 @@ from backend.db.session import AsyncSessionLocal, close_db
 from backend.analytics.geoip import GeoIpService
 from backend.core.redis import redis_client
 from backend.analytics.ua_parser import UserAgentService
-from backend.analytics.worker import AnalyticsWorker
+from backend.workers.analytics_worker import AnalyticsWorker
 from backend.messaging.consumer import ClickConsumer
 from backend.analytics.cache import AnalyticsCache
-from backend.analytics.flush_worker import AnalyticsFlushWorker
+from backend.workers.flush_worker import AnalyticsFlushWorker
 
 async def main():
     geoip = None
