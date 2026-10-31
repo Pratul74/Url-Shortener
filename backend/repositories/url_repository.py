@@ -189,3 +189,10 @@ class URLRepository(BaseRepository[Url]):
 
         await self._delete_cached_url(db_url.short_code)
         return db_url
+
+    async def set_qr_key(self, key: str):
+        short_code = (key.split("/"))[1].split(".")[0]
+        stmt= update(Url).where(Url.short_code == short_code).values(qr_key = key).returning(Url)
+        result = await self.db.execute(stmt)
+        db_url = result.scalar_one()
+        await self.db.refresh(db_url)
