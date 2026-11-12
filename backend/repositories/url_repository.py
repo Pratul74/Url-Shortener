@@ -1,198 +1,167 @@
-from datetime import datetime, timezone
+import logging
 import uuid
+from dataclasses import dataclass
+from datetime import datetime, timezone
 
 from redis.exceptions import RedisError
+from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, update, delete
 
 from backend.core import get_redis_setting
 from backend.core.redis import redis_client
-
-from backend.models.url import Url
 from backend.models.analytics import Analytics
+from backend.models.url import Url
 from backend.repositories.base import BaseRepository
-import logging
 
 logger = logging.getLogger(__name__)
 
 
+@dataclass(frozen=True, slots=True)
+class RedirectTarget:
+    id: int
+    short_code: str
+    original_url: str
+    is_active: bool
+    expires_at: datetime | None
+
+    @classmethod
+    def from_url(cls, url: Url) -> "RedirectTarget":
+        return cls(url.id, url.short_code, url.original_url, url.is_active, url.expires_at)
+
+
 class URLRepository(BaseRepository[Url]):
-    def __init__(self, db: AsyncSession, settings = None):
+    def __init__(self, db: AsyncSession, settings=None):
         super().__init__(Url, db)
         self.redis_client = redis_client
         self.settings = settings or get_redis_setting()
 
-    async def get_all_by_user(self, user_id: uuid.UUID):
-        result = await self.db.execute(select(Url).where(Url.user_id == user_id))
-        url = result.scalars().all()
-        return url
-
-    def _cache_key(self, short_code: str) -> str:
+    @staticmethod
+    def _cache_key(short_code: str) -> str:
         return f"url:{short_code}"
 
     @staticmethod
-    def _datetime_to_iso(value: datetime | None) -> str | None:
-        return value.isoformat() if value else None
+    def _aware(dt: datetime | None) -> datetime | None:
+        if dt is None:
+            return None
+        return dt if dt.tzinfo else dt.replace(tzinfo=timezone.utc)
 
-    def _cache_ttl(self, url: Url) -> int:
+    def _cache_ttl(self, url) -> int:
         ttl = self.settings.REDIS_CACHE_TTL_SECONDS
-
-        if url.expires_at is None:
+        exp = self._aware(url.expires_at)
+        if exp is None:
             return ttl
+        return min(ttl, int((exp - datetime.now(timezone.utc)).total_seconds()))
 
-        now = datetime.now(timezone.utc)
-        expires_at = url.expires_at
-
-        if expires_at.tzinfo is None:
-            now = now.replace(tzinfo=None)
-
-        seconds_until_expiry = int((expires_at - now).total_seconds())
-
-        return min(ttl, seconds_until_expiry)
-
-    def _cache_payload(self, url: Url) -> dict[str, str | int | bool | None]:
+    @staticmethod
+    def _cache_payload(url) -> dict[str, str]:
         return {
-            "id": int(url.id),
-            "original_url": str(url.original_url),
+            "id": str(url.id),
             "short_code": url.short_code,
-            "clicks": str(url.clicks),
-            "is_active": str(url.is_active),
-            "created_at": str(self._datetime_to_iso(url.created_at)),
-            "expires_at": str(self._datetime_to_iso(url.expires_at)),
-            "user_id": str(url.user_id),
+            "original_url": url.original_url,
+            "is_active": "1" if url.is_active else "0",
+            "expires_at": url.expires_at.isoformat() if url.expires_at else "",
         }
 
-    async def _cache_url(self, url: Url) -> None:
+    async def _cache_url(self, url) -> None:
         ttl = self._cache_ttl(url)
-
         if ttl <= 0:
-            logger.info("Skipping cache because TTL <= 0")
             return
-
         key = self._cache_key(url.short_code)
-
         try:
             pipe = self.redis_client.pipeline()
             pipe.hset(key, mapping=self._cache_payload(url))
             pipe.expire(key, ttl)
             await pipe.execute()
-            logger.info(f"Cached {key} for {ttl} seconds")
-        except RedisError as e:
-            logger.exception(f"Redis SET failed: {e}")
+        except RedisError:
+            logger.exception("Redis SET failed for %s", key)
 
     async def _delete_cached_url(self, short_code: str) -> None:
         try:
             await self.redis_client.delete(self._cache_key(short_code))
-        except RedisError as e:
-            logger.exception(f"Redis DELETE failed: {e}")
+        except RedisError:
+            logger.exception("Redis DELETE failed for %s", short_code)
 
-    async def get_by_short_code(self, short_code: str):
+    async def get_for_redirect(self, short_code: str) -> RedirectTarget | None:
         key = self._cache_key(short_code)
-
         try:
             cached = await self.redis_client.hgetall(key)
         except RedisError:
-            logger.exception("Redis Unavailable. Proceeding without cache.")
+            logger.exception("Redis unavailable, falling back to DB")
             cached = None
 
         if cached:
-            logger.info("Cache hit: %s", key)
             try:
-                cached["id"] = int(cached["id"])
-                cached["clicks"] = int(cached["clicks"])
-                cached["is_active"] = cached["is_active"] == "True"
-                cached["created_at"] = (datetime.fromisoformat(cached["created_at"])
-                                        if cached["created_at"] != "None" else None)
-                cached["expires_at"] = (datetime.fromisoformat(cached["expires_at"])
-                                        if cached["expires_at"] != "None" else None)
-                cached["user_id"] = uuid.UUID(cached["user_id"])
-                return Url(**cached)
-            except (KeyError, TypeError, ValueError):
-                logger.exception("Invalid cache entry: %s", key)
+                return RedirectTarget(
+                    id=int(cached["id"]),
+                    short_code=cached["short_code"],
+                    original_url=cached["original_url"],
+                    is_active=cached["is_active"] == "1",
+                    expires_at=(
+                        datetime.fromisoformat(cached["expires_at"])
+                        if cached["expires_at"] else None
+                    ),
+                )
+            except (KeyError, ValueError):
+                logger.warning("Corrupt cache entry %s", key)
                 await self._delete_cached_url(short_code)
 
-        logger.info("Cache Miss: %s", key)
+        url = await self.get_by_short_code(short_code)
+        if url is None:
+            return None
+        await self._cache_url(url)
+        return RedirectTarget.from_url(url)
+
+    async def get_by_short_code(self, short_code: str) -> Url | None:
         result = await self.db.execute(select(Url).where(Url.short_code == short_code))
-        url = result.scalars().first()
+        return result.scalar_one_or_none()
 
-        if url:
-            logger.info("Writing to cache: %s", key)
-            await self._cache_url(url)
+    async def get_all_by_user(self, user_id: uuid.UUID, limit: int = 20, offset: int = 0):
+        result = await self.db.execute(
+            select(Url)
+            .where(Url.user_id == user_id)
+            .order_by(Url.created_at.desc(), Url.id.desc())
+            .limit(limit)
+            .offset(offset)
+        )
+        return result.scalars().all()
 
-        return url
-
-    async def create(self, **kwargs):
+    async def create(self, **kwargs) -> Url:
         try:
             url = Url(**kwargs)
             self.db.add(url)
             await self.db.flush()
-
             self.db.add(Analytics(url_id=url.id))
             await self.db.commit()
             await self.db.refresh(url)
-        except Exception as e:
-            logger.exception(f"Database transaction failed")
+        except Exception:
+            logger.exception("Database transaction failed")
             await self.db.rollback()
             raise
         await self._cache_url(url)
-
         return url
 
-    async def get_by_original_url(self, original_url: str, user_id:uuid.UUID):
-        result = await self.db.execute(
-            select(Url)
-            .where(Url.user_id == user_id)
-            .where(Url.original_url == original_url)
+    async def increment_clicks_by_code(self, short_code: str) -> None:
+        await self.db.execute(
+            update(Url)
+            .where(Url.short_code == short_code)
+            .values(clicks=Url.clicks + 1, updated_at=Url.updated_at)
+            .execution_options(synchronize_session=False)
         )
-        return result.scalars().first()
-
-    async def short_code_exists(self, short_code: str) -> bool:
-        return await self.get_by_short_code(short_code) is not None
-
-    async def increment_clicks(self, url: Url):
-        stmt = update(Url).where(Url.id == url.id).values(clicks=Url.clicks+1).returning(Url)
-        result = await self.db.execute(stmt)
-        db_url = result.scalar_one()
-        await self.db.commit()
-        key = self._cache_key(db_url.short_code)
-        try:
-            if await self.redis_client.exists(key):
-                await self.redis_client.hincrby(key, "clicks", 1)
-        except RedisError:
-            logger.exception("Redis Unavailable. Proceeding without cache.")
-        return db_url
-
-    async def deactivate(self, user_id:uuid.UUID, url: Url):
-        if url.user_id != user_id:
-            raise PermissionError("You do not own this url.")
-
-        
-        stmt = update(Url).where(Url.id == url.id).values(is_active=False).returning(Url)
-        result = await self.db.execute(stmt)
-        db_url = result.scalar_one()
-
         await self.db.commit()
 
-        await self.db.refresh(db_url)
-
-        await self._delete_cached_url(db_url.short_code)
-
-        return db_url
-
-    async def permanent_delete_url(self, user_id: uuid.UUID, url: Url):
-        if url.user_id != user_id:
-            raise PermissionError("You do not own this url.")
-        stmt = delete(Url).where(Url.id == url.id).returning(Url)
-        result= await self.db.execute(stmt)
-        db_url = result.scalar_one()
+    async def set_qr_key(self, url: Url, key: str) -> None:
+        url.qr_key = key
         await self.db.commit()
+        await self.db.refresh(url)
 
-        await self._delete_cached_url(db_url.short_code)
-        return db_url
+    async def deactivate(self, url: Url) -> None:
+        short_code = url.short_code
+        url.is_active = False
+        await self.db.commit()
+        await self._delete_cached_url(short_code)
 
-    async def set_qr_key(self, key: str):
-        short_code = (key.split("/"))[1].split(".")[0]
-        stmt= update(Url).where(Url.short_code == short_code).values(qr_key = key).returning(Url)
-        result = await self.db.execute(stmt)
-        db_url = result.scalar_one()
-        await self.db.refresh(db_url)
+    async def permanent_delete_url(self, url: Url) -> None:
+        short_code = url.short_code
+        await self.db.delete(url)
+        await self.db.commit()
+        await self._delete_cached_url(short_code)
