@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, BarChart3, Copy, ExternalLink, Loader2, LogOut, Plus, RefreshCw, Trash2 } from "lucide-react";
+import { ArrowLeft, BarChart3, Copy, Download, ExternalLink, Loader2, LogOut, Plus, QrCode, RefreshCw, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 
-import { createShortUrl, deleteUrl, listUrls, permanentlyDeleteUrl } from "../api/url";
+import { createShortUrl, deleteUrl, getQrCode, listUrls, permanentlyDeleteUrl } from "../api/url";
 import { getApiErrorMessage } from "../api/axios";
 import { useAuth } from "../context/AuthContext";
 
@@ -25,6 +25,8 @@ export default function Dashboard() {
     const [links, setLinks] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isCreating, setIsCreating] = useState(false);
+    const [qrPreview, setQrPreview] = useState(null);
+    const [isLoadingQr, setIsLoadingQr] = useState(false);
     const [form, setForm] = useState({
         original_url: "",
         custom_alias: "",
@@ -58,6 +60,12 @@ export default function Dashboard() {
         loadLinks();
     }, []);
 
+    useEffect(() => {
+        return () => {
+            if (qrPreview) URL.revokeObjectURL(qrPreview.url);
+        };
+    }, [qrPreview]);
+
     async function handleCreate(event) {
         event.preventDefault();
         setIsCreating(true);
@@ -81,8 +89,28 @@ export default function Dashboard() {
     }
 
     async function copyLink(shortUrl) {
-        await navigator.clipboard.writeText(shortUrl);
-        toast.success("Copied short link");
+        try {
+            await navigator.clipboard.writeText(shortUrl);
+            toast.success("Copied short link");
+        } catch {
+            toast.error("Unable to copy short link");
+        }
+    }
+
+    async function showQr(link) {
+        setIsLoadingQr(true);
+        try {
+            const blob = await getQrCode(link.short_code);
+            setQrPreview({ url: URL.createObjectURL(blob), shortUrl: link.short_url });
+        } catch (error) {
+            toast.error(getApiErrorMessage(error, "Unable to generate QR code"));
+        } finally {
+            setIsLoadingQr(false);
+        }
+    }
+
+    function closeQr() {
+        setQrPreview(null);
     }
 
     async function handleSoftDelete(shortCode) {
@@ -237,6 +265,9 @@ export default function Dashboard() {
                                             <button className="icon-button" onClick={() => copyLink(link.short_url)} title="Copy link" type="button">
                                                 <Copy size={16} />
                                             </button>
+                                            <button className="icon-button" disabled={isLoadingQr} onClick={() => showQr(link)} title="Show QR code" type="button">
+                                                {isLoadingQr ? <Loader2 className="spin" size={16} /> : <QrCode size={16} />}
+                                            </button>
                                             <a className="icon-button" href={link.short_url} rel="noreferrer" target="_blank" title="Open link">
                                                 <ExternalLink size={16} />
                                             </a>
@@ -260,6 +291,25 @@ export default function Dashboard() {
                     )}
                 </section>
             </section>
+
+            {qrPreview ? (
+                <div className="qr-backdrop" onClick={closeQr} role="presentation">
+                    <section className="qr-dialog" onClick={(event) => event.stopPropagation()} role="dialog" aria-modal="true" aria-label="QR code">
+                        <div className="section-heading">
+                            <div>
+                                <p className="eyebrow">Share visually</p>
+                                <h2>QR code</h2>
+                            </div>
+                            <button className="icon-button" onClick={closeQr} title="Close" type="button"><X size={17} /></button>
+                        </div>
+                        <img className="qr-image" src={qrPreview.url} alt={`QR code for ${qrPreview.shortUrl}`} />
+                        <p className="muted-copy qr-url">{qrPreview.shortUrl}</p>
+                        <a className="primary-button qr-download" download="snipp-qr-code.png" href={qrPreview.url}>
+                            <Download size={17} /> Download QR code
+                        </a>
+                    </section>
+                </div>
+            ) : null}
         </main>
     );
 }
