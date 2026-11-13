@@ -19,6 +19,7 @@ router = APIRouter()
 async def get_original_url(db: db_dependency, short_code: str, request: Request, background_tasks: BackgroundTasks):
     url_service = UrlShortenerService(db)
     url = await url_service.get_original_url(short_code)
+    await url_service.record_click(short_code)
     ip_address =  request.client.host if request.client else "Unknown"
     logger.info("Click on %s from ip=%s", short_code, ip_address)
     background_tasks.add_task(
