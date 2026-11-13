@@ -48,7 +48,6 @@ class GeoIpService:
         return self.reader
 
     def _lookup_sync(self, ip_address: str) -> dict | None:
-        print(ip_address)
         with self._lock:
             reader = self._get_reader()
             try:
