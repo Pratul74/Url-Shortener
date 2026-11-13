@@ -6,6 +6,7 @@ class UrlCreate(BaseModel):
     custom_alias:str | None = Field(
         min_length=3,
         max_length=10,
+        pattern=r"^[A-Za-z0-9_-]+$",
         default=None
     )
 
@@ -32,3 +33,4 @@ class UrlInfo(BaseModel):
     is_active:bool
     created_at:datetime
     expires_at:datetime | None
+    qr_url: str | None = None
