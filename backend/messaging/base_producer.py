@@ -3,7 +3,7 @@ from backend.messaging.channel import RabbitMQChannel
 from aio_pika import Message, DeliveryMode
 class BaseProducer:
     routing_key: str
-    def __int__(self, settings=None):
+    def __init__(self, settings=None):
         self.settings = settings or get_rabbitmq_setting()
 
     async def _publish(self, body: str, routing_key: str):
@@ -15,6 +15,7 @@ class BaseProducer:
         await exhange.publish(
             Message(
                 body=body.encode(),
+                content_type="application/json",
                 delivery_mode=DeliveryMode.PERSISTENT,
 
             ),
