@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 
 from redis.exceptions import RedisError
-from sqlalchemy import select, update
+from sqlalchemy import func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.core import get_redis_setting
@@ -144,7 +144,7 @@ class URLRepository(BaseRepository[Url]):
         await self.db.execute(
             update(Url)
             .where(Url.short_code == short_code)
-            .values(clicks=Url.clicks + 1, updated_at=Url.updated_at)
+            .values(clicks=Url.clicks + 1, updated_at=func.now())
             .execution_options(synchronize_session=False)
         )
         await self.db.commit()
