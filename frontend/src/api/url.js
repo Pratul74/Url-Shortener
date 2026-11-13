@@ -20,6 +20,11 @@ export async function permanentlyDeleteUrl(shortCode) {
     return response.data;
 }
 
+export async function getQrCode(shortCode) {
+    const response = await api.get(`/urls/qr/${encodeURIComponent(shortCode)}`, { responseType: "blob" });
+    return response.data;
+}
+
 export async function getAnalytics(urlId) {
     const response = await api.get(`/analytics/${urlId}/dashboard`);
     return response.data;
