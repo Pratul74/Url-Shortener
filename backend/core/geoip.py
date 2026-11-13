@@ -4,7 +4,7 @@ from backend.core import get_geoip_setting
 class GeoIpService:
     def __init__(self, settings = None):
         settings = settings or get_geoip_setting()
-        self.reader = Reader(settings.GeoLite2_PATH)
+        self.reader = Reader(settings.GEOLITE2_PATH)
 
     def lookup(self, ip_address) -> dict | None:
         try:
