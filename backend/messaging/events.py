@@ -1,7 +1,7 @@
 from pydantic import BaseModel
 from typing import Optional
 from datetime import datetime
-from typing import Literal
+from enum import StrEnum
 
 class ClickEvent(BaseModel):
     url_id: int
@@ -11,7 +11,12 @@ class ClickEvent(BaseModel):
     referrer: Optional[str] = None
     timestamp: datetime
 
+class QrAction(StrEnum):
+    DELETE = "delete"
+    UPLOAD = "upload"
+
 class QrCodeJobEvent(BaseModel):
     short_code: str
-    actions : Literal["generate", "delete"] = "generate"
+    action : QrAction
+    qr_key: str | None = None
     
