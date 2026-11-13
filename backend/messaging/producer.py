@@ -10,7 +10,8 @@ class ClickEventProducer(BaseProducer):
         await self._publish(event.model_dump_json(), self.settings.ANALYTICS_ROUTING_KEY)
 
 class QrJobProducer(BaseProducer):
-    async def publish(self, short_code: str, action: str = "generate"):
+    async def publish(self, short_code: str, action: str = "upload", qr_key: str | None = None):
         logger.info("Publishing QR job for %s", short_code)
-        event = QrCodeJobEvent(short_code=short_code, actions=action)
+        event = QrCodeJobEvent(short_code=short_code, action=action, qr_key=qr_key)
         await self._publish(event.model_dump_json(), self.settings.QR_ROUTING_KEY)
+        logger.info("Qr Job published :)")
