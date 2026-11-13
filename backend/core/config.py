@@ -3,7 +3,7 @@ from typing import Literal
 from pathlib import Path
 import os
 
-from pydantic import Field, SecretStr
+from pydantic import AliasChoices, Field, SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -35,11 +35,15 @@ class RabbitMqSetting(_Base):
     RABBITMQ_USER: str
     RABBITMQ_PASS: str
     RABBITMQ_EXCHANGE: str
-    ANALYTICS_QUEUE: str
-    ANALYTICS_ROUTING_KEY: str
+    ANALYTICS_QUEUE: str = Field(
+        validation_alias=AliasChoices("ANALYTICS_QUEUE", "RABBITMQ_QUEUE")
+    )
+    ANALYTICS_ROUTING_KEY: str = Field(
+        validation_alias=AliasChoices("ANALYTICS_ROUTING_KEY", "RABBITMQ_ROUTING_KEY")
+    )
 
-    QR_QUEUE:str
-    QR_ROUTING_KEY:str
+    QR_QUEUE: str = "url_qr_jobs"
+    QR_ROUTING_KEY: str = "qr.upload"
 
 
 class APISetting(_Base):
