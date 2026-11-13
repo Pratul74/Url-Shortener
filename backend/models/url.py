@@ -23,6 +23,7 @@ class Url(Base):
         UUID(as_uuid=True),
         ForeignKey("users.id", ondelete="CASCADE"),
         nullable=False,
+        index=True,
     )
 
     qr_key: Mapped[str | None] = mapped_column(String(255), nullable=True, unique=True)
