@@ -32,12 +32,13 @@ class IDGenerator:
                     raise RuntimeError(f"Clock moved backwards by {drift}ms")
                 return None, drift/1000
             if ts == self.last_ts:
-                self.seq = (self.seq + 1) & self.MAX_SEQ
-                if self.seq==0:
+                next_seq = (self.seq + 1) & self.MAX_SEQ
+                if next_seq==0:
                     return None, 0.001
+                self.seq = next_seq
             else:
                 self.seq=0
-            self.last_ts = ts
+                self.last_ts = ts
             new_id = (
                 (self.last_ts - self.EPOCH) << (self.SEQ_BITS + self.WORKER_BITS)
                 | self.worker_id << self.SEQ_BITS
