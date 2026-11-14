@@ -57,8 +57,6 @@ class QrCodeService:
         img.save(buf, format="PNG")
         return buf.getvalue()
 
-    _build_qr_image = build_qr_image
-
     @staticmethod
     def _key_for(short_code: str) -> str:
         if not _SHORT_CODE_RE.match(short_code):
