@@ -1,7 +1,5 @@
 import logging
-from enum import StrEnum
 
-from backend.core.config import get_rabbitmq_setting
 from backend.messaging.events import QrCodeJobEvent, QrAction
 from backend.services.qr import QrCodeService
 from backend.repositories.url_repository import URLRepository
@@ -9,8 +7,7 @@ from backend.repositories.url_repository import URLRepository
 logger = logging.getLogger(__name__)
 
 class QrJobWorker:
-    def __init__(self, session_factory, qr_service: QrCodeService, settings=None):
-        self.settings = settings or get_rabbitmq_setting()
+    def __init__(self, session_factory, qr_service: QrCodeService):
         self.session_factory = session_factory
         self.qr = qr_service
 
@@ -25,12 +22,12 @@ class QrJobWorker:
                 repo = URLRepository(db)
                 url = await repo.get_by_short_code(job.short_code)
                 if url is None:
-                    raise LookupError(job.short_code)
+                    logger.warning("Skipping QR upload for missing url %s", job.short_code)
+                    return
                 if not url.is_active or url.qr_key:
                     return
                 key = await self.qr.upload_qr(url.short_code)
                 await repo.set_qr_key(url, key)
-                await db.commit()
                 logger.info("Qr code with key: %s, uploaded successfully", key)
             return
         raise ValueError(f"Unknown QR action: {job.action}")
