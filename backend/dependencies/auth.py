@@ -1,3 +1,5 @@
+import uuid
+
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError
 from typing import Annotated
@@ -16,19 +18,16 @@ async def get_current_user(token:str = Depends(oauth2_scheme), db: AsyncSession 
     try:
         payload=decode_access_token(token)
 
-        user_id=payload.get('sub')
+        user_id = uuid.UUID(payload.get('sub'))
 
-        if user_id is None:
-            raise InvalidCredentialsException()
-
-    except JWTError:
+    except (JWTError, TypeError, ValueError):
         raise InvalidCredentialsException()
 
     repo = UserRepository(db)
 
     user = await repo.get_by_id(user_id)
 
-    if user is None:
+    if user is None or not user.is_active:
         raise InvalidCredentialsException()
 
     return user
