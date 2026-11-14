@@ -52,9 +52,3 @@ def register_exception_handlers(app: FastAPI):
             content={'detail': str(exc)}
         )
 
-    @app.exception_handler(PermissionError)
-    async def permission_error_handler(request: Request, exc: PermissionError):
-        return JSONResponse(
-            status_code=403,
-            content={'detail': str(exc)}
-        )
