@@ -1,2 +1,2 @@
-from .base62 import encode, decode
+from .base62 import encode
 from .snowflake import IDGenerator
