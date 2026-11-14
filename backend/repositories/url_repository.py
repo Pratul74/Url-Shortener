@@ -115,14 +115,16 @@ class URLRepository(BaseRepository[Url]):
         result = await self.db.execute(select(Url).where(Url.short_code == short_code))
         return result.scalar_one_or_none()
 
-    async def get_all_by_user(self, user_id: uuid.UUID, limit: int = 20, offset: int = 0):
-        result = await self.db.execute(
+    async def get_all_by_user(self, user_id: uuid.UUID, limit: int | None = None, offset: int = 0):
+        query = (
             select(Url)
             .where(Url.user_id == user_id)
             .order_by(Url.created_at.desc(), Url.id.desc())
-            .limit(limit)
             .offset(offset)
         )
+        if limit is not None:
+            query = query.limit(limit)
+        result = await self.db.execute(query)
         return result.scalars().all()
 
     async def create(self, **kwargs) -> Url:
