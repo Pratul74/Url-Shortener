@@ -133,7 +133,7 @@ The application follows a layered architecture:
 - Redis
 - RabbitMQ
 - Node.js 22 or newer for local frontend development
-- GeoLite2 City database file at `backend/data/GeoLite2-City.mmdb`
+- GeoLite2 City database file at `data/GeoLite2-City.mmdb`
 
 Docker Compose can run the frontend, PostgreSQL, Redis, RabbitMQ, the API, and the analytics worker for you.
 
@@ -144,7 +144,8 @@ Create a `.env` file in the project root:
 ```env
 DATABASE_URL=postgresql://postgres:password@localhost:5432/url_shortener_db
 BASE_URL=http://localhost:8000
-SECRET_KEY=replace-with-a-secure-secret
+# At least 32 characters; generate with: openssl rand -hex 32
+SECRET_KEY=replace-with-the-output-of-openssl-rand-hex-32
 JWT_ALGORITHM=HS256
 ACCESS_TOKEN_EXPIRE_MINUTES=30
 
@@ -152,7 +153,7 @@ REDIS_HOST=localhost
 REDIS_PORT=6379
 REDIS_CACHE_TTL_SECONDS=86400
 
-GEOLITE2_PATH=backend/data/GeoLite2-City.mmdb
+GEOLITE2_PATH=data/GeoLite2-City.mmdb
 FRONTEND_ORIGINS=http://localhost:5173,http://localhost:3000
 
 RABBITMQ_HOST=localhost
@@ -164,7 +165,7 @@ RABBITMQ_QUEUE=url_clicks
 RABBITMQ_ROUTING_KEY=click
 ```
 
-When running with Docker Compose, the compose file supplies container network values for the services and mounts `./backend/data/GeoLite2-City.mmdb` into the API, analytics worker, and flush worker containers.
+When running with Docker Compose, the compose file supplies container network values for the services and mounts `./data/GeoLite2-City.mmdb` into the analytics worker container.
 
 The frontend uses `frontend/.env` for local development:
 
@@ -190,29 +191,34 @@ pip install -r requirements.txt
 Apply database migrations:
 
 ```bash
-alembic upgrade head
+alembic -c backend/alembic.ini upgrade head
 ```
 
 Run the API:
 
 ```bash
-cd backend
-uvicorn main:app --reload
+uvicorn backend.main:app --reload
 ```
 
 Run the analytics worker in a separate terminal:
 
 ```bash
-cd backend
-python -m analytics.bootstrap
+python -m backend.workers.analytics_runner
 ```
 
 Run the analytics flush worker in another terminal:
 
 ```bash
-cd backend
-python -m analytics.flush_worker
+python -m backend.workers.flush_worker
 ```
+
+Run the QR code worker (requires the AWS/S3 settings) in another terminal:
+
+```bash
+python -m backend.workers.qr_runner
+```
+
+All commands are run from the repository root, since the code imports the `backend` package.
 
 The API is available at:
 
