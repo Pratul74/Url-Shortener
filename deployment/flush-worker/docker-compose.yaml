@@ -9,7 +9,7 @@ services:
     command:
       - python
       - -m
-      - backend.analytics.flush_worker
+      - backend.workers.flush_worker
 
     env_file:
       - .env
