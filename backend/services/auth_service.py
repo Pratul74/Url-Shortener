@@ -1,3 +1,6 @@
+from email_validator import EmailNotValidError, validate_email
+from sqlalchemy.exc import IntegrityError
+
 from backend.services.base import BaseService
 from sqlalchemy.ext.asyncio import AsyncSession
 from backend.mappers import UserMapper
@@ -18,20 +21,31 @@ class AuthService(BaseService):
         if await self.repo.exists_by_username(request.username):
             raise UserAlreadyExistsException()
 
-        user = await self.repo.create(
-            username = request.username,
-            email = request.email,
-            hashed_password = hash_password(request.password)
-        )
+        try:
+            user = await self.repo.create(
+                username = request.username,
+                email = request.email,
+                hashed_password = hash_password(request.password)
+            )
+        except IntegrityError:
+            await self.db.rollback()
+            raise UserAlreadyExistsException()
 
         return UserMapper.to_response(user)
 
-    async def login(self, email, password) -> TokenResponse:
-        user = await self.repo.get_by_email(email)
+    @staticmethod
+    def _normalize_email(email: str) -> str:
+        try:
+            return validate_email(email, check_deliverability=False).normalized
+        except EmailNotValidError:
+            return email
 
-        if not user:
+    async def login(self, email, password) -> TokenResponse:
+        user = await self.repo.get_by_email(self._normalize_email(email))
+
+        if not user or not user.is_active:
             raise InvalidCredentialsException()
-        
+
         if not verify_password(password, user.hashed_password):
             raise InvalidCredentialsException()
 
@@ -44,4 +58,3 @@ class AuthService(BaseService):
         return TokenResponse(
             access_token=token,
         )
-
