@@ -54,7 +54,7 @@ services:
     networks:
       - url_shortener_network
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=4)"]
       interval: 30s
       timeout: 5s
       retries: 3
@@ -75,7 +75,7 @@ services:
     command:
       - python
       - -m
-      - backend.analytics.bootstrap
+      - backend.workers.analytics_runner
 
     env_file:
       - .env
@@ -92,6 +92,26 @@ services:
     depends_on:
       geoipupdate:
         condition: service_healthy
+
+  qr_worker:
+    image: pratul74/url-shortener-backend:latest
+
+    restart: always
+
+    command:
+      - python
+      - -m
+      - backend.workers.qr_runner
+
+    env_file:
+      - .env
+
+    networks:
+      - url_shortener_network
+
+    logging: *default-logging
+
+    pull_policy: always
 
 
 networks:
