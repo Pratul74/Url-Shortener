@@ -73,7 +73,7 @@ export default function Register() {
                         <span>Password</span>
                         <div className="relative">
                             <input
-                                autoComplete="current-password"
+                                autoComplete="new-password"
                                 className="w-full pr-11"
                                 minLength={8}
                                 name="password"
