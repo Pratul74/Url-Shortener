@@ -1,4 +1,6 @@
-from fastapi import APIRouter
+from typing import Annotated
+
+from fastapi import APIRouter, Path
 from backend.db import db_dependency
 from backend.dependencies import CurrentUser
 from backend.services import AnalyticsService
@@ -11,7 +13,9 @@ router = APIRouter(
 
 
 @router.get("/{url_id}/dashboard", response_model=AnalyticsOut)
-async def get_dashboard(url_id: int, db: db_dependency, user: CurrentUser):
+async def get_dashboard(
+    url_id: Annotated[int, Path(ge=0, le=2**63 - 1)],
+    db: db_dependency, user: CurrentUser):
     service = AnalyticsService(db)
     dashboard = await service.get_analytics(user_id=user.id, url_id=url_id)
     return AnalyticsOut(
