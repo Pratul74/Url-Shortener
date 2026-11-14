@@ -16,12 +16,6 @@ class AnalyticsRepository(BaseRepository[Analytics]):
         )
         return result.scalar_one_or_none()
 
-    async def create(self, analytics: Analytics):
-        self.db.add(analytics)
-        await self.db.commit()
-        await self.db.refresh(analytics)
-        return analytics
-
     async def update(self, analytics: Analytics):
         await self.db.commit()
         await self.db.refresh(analytics)
