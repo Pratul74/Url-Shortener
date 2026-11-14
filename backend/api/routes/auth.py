@@ -1,7 +1,7 @@
 from fastapi import APIRouter, status, Depends
 from fastapi.security import OAuth2PasswordRequestForm
 from typing import Annotated
-from backend.schemas import UserCreate, UserResponse, TokenResponse, LoginRequest
+from backend.schemas import UserCreate, UserResponse, TokenResponse
 from backend.db.dependencies import db_dependency
 from backend.services import AuthService
 
