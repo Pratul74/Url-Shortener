@@ -17,6 +17,5 @@ class QrAction(StrEnum):
 
 class QrCodeJobEvent(BaseModel):
     short_code: str
-    action : QrAction
+    action: QrAction = QrAction.UPLOAD
     qr_key: str | None = None
-    
