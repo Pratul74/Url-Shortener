@@ -19,3 +19,9 @@ class RabbitMQConnection:
                         password= settings.RABBITMQ_PASS
                     )
         return cls._connection
+
+    @classmethod
+    async def close(cls) -> None:
+        if cls._connection is not None and not cls._connection.is_closed:
+            await cls._connection.close()
+        cls._connection = None
