@@ -1,27 +1,6 @@
 from pydantic import BaseModel
 from typing import Optional
 
-class Country(BaseModel):
-    country: str
-    click_count: int
-
-
-class City(BaseModel):
-    city:str
-    click_count:int
-
-class Browser(BaseModel):
-    browser: str
-    click_count: int
-
-class Device(BaseModel):
-    device: str
-    click_count: int
-
-class Os(BaseModel):
-    os: str
-    click_count: int
-
 class CreateAnalytics(BaseModel):
     url_id: int
     ip_address: str
