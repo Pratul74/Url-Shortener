@@ -3,8 +3,10 @@ from backend.core import get_redis_setting
 
 settings = get_redis_setting()
 
-redis_client = Redis.from_url(
-    f"redis://{settings.REDIS_HOST}:{settings.REDIS_PORT}",
+redis_client = Redis(
+    host=settings.REDIS_HOST,
+    port=settings.REDIS_PORT,
+    password=settings.REDIS_PASSWORD.get_secret_value() if settings.REDIS_PASSWORD else None,
     encoding="utf-8",
     decode_responses=True,
     max_connections=20,
@@ -12,4 +14,3 @@ redis_client = Redis.from_url(
     socket_timeout=1,
     health_check_interval=30,
 )
-
