@@ -1,7 +1,8 @@
 import logging
 import re
 import asyncio
-from datetime import datetime, timezone, timedelta
+import secrets
+from datetime import datetime, timezone
 
 from sqlalchemy.exc import IntegrityError
 
@@ -24,6 +25,8 @@ _ALIAS_RE = re.compile(r"^[A-Za-z0-9_-]{3,10}$")
 _RESERVED = {"api", "docs", "redoc", "openapi", "health", "login", "register", "admin", "static"}
 _MAX_CODE_RETRIES = 3
 
+_id_generator = IDGenerator(worker_id=secrets.randbelow(IDGenerator.MAX_WORKER + 1))
+
 
 class UrlShortenerService(BaseService):
     def __init__(
@@ -35,7 +38,7 @@ class UrlShortenerService(BaseService):
     ):
         super().__init__(db)
         self.repo = URLRepository(db)
-        self.generator = generator or IDGenerator(worker_id=0)
+        self.generator = generator or _id_generator
         self.qr = qr_service
         self.settings = settings or get_api_setting()
 
@@ -63,22 +66,12 @@ class UrlShortenerService(BaseService):
             raise UrlNotFoundException()
         return url
 
-    async def _attach_qr(self, url) -> None:
-        if self.qr is None:
-            return
-        try:
-            key = await self.qr.upload_qr(url.short_code)
-            await self.repo.set_qr_key(url, key)
-        except QrStorageError:
-            logger.warning("QR generation failed for %s; continuing", url.short_code)
-
     async def create_short_url(
         self,
         original_url: str,
         custom_alias: str | None = None,
         expires_at: datetime | None = None,
         user_id=None,
-        with_qr: bool = False,
     ):
         expires_at = self._as_utc(expires_at)
         if expires_at is not None and expires_at <= datetime.now(timezone.utc):
@@ -117,7 +110,7 @@ class UrlShortenerService(BaseService):
         return url
 
     async def get_original_url(self, short_code: str):
-        url = await self.repo.get_by_short_code(short_code)
+        url = await self.repo.get_for_redirect(short_code)
         if not url:
             raise UrlNotFoundException()
         if not url.is_active:
@@ -153,7 +146,7 @@ class UrlShortenerService(BaseService):
             f"{self.settings.BASE_URL.rstrip('/')}/{url.short_code}",
         )
 
-    async def list_url_by_user(self, user_id, limit: int = 20, offset: int = 0):
+    async def list_url_by_user(self, user_id, limit: int | None = None, offset: int = 0):
         urls = await self.repo.get_all_by_user(user_id, limit=limit, offset=offset)
         return [UrlMapper.to_details(u, self.settings.BASE_URL) for u in urls]
 
