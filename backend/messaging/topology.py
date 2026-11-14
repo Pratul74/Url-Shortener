@@ -14,7 +14,7 @@ class RabbitMQTopology:
         channel = await RabbitMQChannel.get_channel()
 
         dlx = await channel.declare_exchange(
-            "qr.dlx",
+            QR_DEAD_LETTER_EXCHANGE,
             ExchangeType.DIRECT,
             durable=True,
         )
