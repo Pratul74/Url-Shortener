@@ -6,7 +6,7 @@ logger = logging.getLogger(__name__)
 
 class ClickEventProducer(BaseProducer):
     async def publish(self, event: ClickEvent):
-        logger.info("Publishing analytics event")
+        logger.debug("Publishing analytics event")
         await self._publish(event.model_dump_json(), self.settings.ANALYTICS_ROUTING_KEY)
 
 class QrJobProducer(BaseProducer):
