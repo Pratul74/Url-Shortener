@@ -26,6 +26,7 @@ class DatabaseSetting(_Base):
 class RedisSetting(_Base):
     REDIS_HOST: str
     REDIS_PORT: int = Field(ge=1, le=65535)
+    REDIS_PASSWORD: SecretStr | None = None
     REDIS_CACHE_TTL_SECONDS: int = 86400
 
 
@@ -48,9 +49,9 @@ class RabbitMqSetting(_Base):
 
 class APISetting(_Base):
     BASE_URL: str
-    SECRET_KEY: SecretStr
+    SECRET_KEY: SecretStr = Field(min_length=32)
     JWT_ALGORITHM: Literal["HS256", "HS384", "HS512"] = "HS256"
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = Field(default=30, gt=0)
 
 
 class GeoIpSetting(_Base):
@@ -67,8 +68,8 @@ class FrontendSetting(_Base):
 class AwsSetting(_Base):
     AWS_REGION: str
     S3_BUCKET: str
-    ACCESS_KEY: str
-    SECRET_ACCESS_KEY: str
+    ACCESS_KEY: str | None = None
+    SECRET_ACCESS_KEY: str | None = None
 
 
 @lru_cache
