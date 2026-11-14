@@ -5,6 +5,11 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm ci
 
+# Vite inlines VITE_* variables at build time; without declaring the ARG the
+# CI build-arg is dropped and the bundle falls back to "/api".
+ARG VITE_API_URL
+ENV VITE_API_URL=$VITE_API_URL
+
 COPY . .
 RUN npm run build
 
