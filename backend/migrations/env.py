@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import async_engine_from_config
 
 from alembic import context
 
-from backend.db.database import Base
+from backend.db.database import Base, get_async_database_url
 from backend.models import Analytics, Url, User  # noqa: F401  (imported so models register on Base.metadata)
 from backend.core import get_database_setting
 
@@ -17,9 +17,13 @@ settings = get_database_setting()
 # access to the values within the .ini file in use.
 config = context.config
 
-# Set the URL from your application settings.
+# Set the URL from your application settings. Migrations run on an async
+# engine, so normalise to the asyncpg driver exactly like the app does.
 # Note: "%" must be escaped as "%%" because ConfigParser does interpolation.
-config.set_main_option("sqlalchemy.url", settings.DATABASE_URL.replace("%", "%%"))
+config.set_main_option(
+    "sqlalchemy.url",
+    get_async_database_url(settings.DATABASE_URL).replace("%", "%%"),
+)
 
 # Interpret the config file for Python logging.
 if config.config_file_name is not None:
